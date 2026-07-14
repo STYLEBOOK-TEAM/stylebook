@@ -59,7 +59,7 @@ export default function CreatePostScreen({ navigation }: any) {
       setImageUri('');
       setImageUrl('');
       Alert.alert('Posted!', 'Your post is now live in the feed', [
-        { text: 'OK', onPress: () => navigation.navigate('Dashboard') },
+        { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.error || 'Failed to create post');
