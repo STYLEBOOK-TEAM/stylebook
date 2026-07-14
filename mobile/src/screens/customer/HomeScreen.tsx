@@ -72,8 +72,8 @@ export default function HomeScreen({ navigation }: any) {
       }
       const noFilters = !search && category === 'ALL' && selectedCity.id === 'ALL' && !nearMe;
       setShops(data.length === 0 && noFilters ? SEED_SHOPS : data);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error('loadShops failed:', JSON.stringify(error.response?.data) || error.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -498,6 +498,4 @@ const styles = StyleSheet.create({
   cityIconText: { fontSize: 18 },
   cityInfo: { flex: 1 },
   cityLabel: { fontSize: 15, fontWeight: '600' },
-  citySubtitle: { fontSize: 12, marginTop: 2 },
-  cityCheck: { fontSize: 18, fontWeight: '700' },
-});
+  citySubtitle: { fontSize:

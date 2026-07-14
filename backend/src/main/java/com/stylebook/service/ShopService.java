@@ -28,10 +28,19 @@ public class ShopService {
                 shopCategory = Shop.ShopCategory.valueOf(category.toUpperCase());
             } catch (IllegalArgumentException ignored) {}
         }
-        if ((query == null || query.isEmpty()) && shopCategory == null) {
+        boolean hasQuery = query != null && !query.trim().isEmpty();
+        if (!hasQuery && shopCategory == null) {
             shops = shopRepository.findByIsActiveTrue();
+        } else if (!hasQuery) {
+            shops = shopRepository.findByCategory(shopCategory);
         } else {
-            shops = shopRepository.findByFilters(query, shopCategory);
+            shops = shopRepository.searchShops(query.trim());
+            if (shopCategory != null) {
+                final Shop.ShopCategory categoryFilter = shopCategory;
+                shops = shops.stream()
+                        .filter(s -> s.getCategory() == categoryFilter)
+                        .collect(Collectors.toList());
+            }
         }
         return shops.stream()
                 .map(shop -> mapToResponse(shop, currentUserId))
@@ -217,16 +226,4 @@ public class ShopService {
         List<String> photoUrls = shopPhotoRepository.findByShopOrderByCreatedAtDesc(shop)
                 .stream()
                 .map(ShopPhoto::getImageUrl)
-                .collect(Collectors.toList());
-        response.setPhotoUrls(photoUrls);
-        if (currentUserId != null) {
-            User currentUser = userRepository.findById(currentUserId).orElse(null);
-            if (currentUser != null) {
-                response.setFavourited(
-                    favouriteRepository.existsByCustomerAndShop(currentUser, shop)
-                );
-            }
-        }
-        return response;
-    }
-}
+                .collect
