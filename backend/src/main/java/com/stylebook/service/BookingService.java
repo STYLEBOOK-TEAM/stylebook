@@ -266,8 +266,10 @@ public class BookingService {
         }
         response.setOpen(true);
 
-        int openMin = window[0];
-        int closeMin = window[1];
+        // 30-minute buffer: first slot starts 30 min after opening,
+        // last appointment must finish 30 min before closing
+        int openMin = window[0] + 30;
+        int closeMin = window[1] - 30;
         int duration = service.getDurationMinutes() != null ? service.getDurationMinutes() : 30;
 
         List<int[]> booked = bookingRepository.findActiveByShopAndDate(shop, date).stream()
@@ -308,8 +310,8 @@ public class BookingService {
         int start = time.toSecondOfDay() / 60;
         int end = start + duration;
 
-        if (start < window[0] || end > window[1]) {
-            throw new RuntimeException("This time is outside the shop's opening hours");
+        if (start < window[0] + 30 || end > window[1] - 30) {
+            throw new RuntimeException("This time is outside the shop's bookable hours");
         }
 
         for (Booking b : bookingRepository.findActiveByShopAndDate(shop, date)) {
