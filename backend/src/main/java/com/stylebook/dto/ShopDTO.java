@@ -4,6 +4,11 @@ import lombok.Data;
 import java.util.List;
 public class ShopDTO {
     @Data
+    public static class PhotoResponse {
+        private String id;
+        private String imageUrl;
+    }
+    @Data
     public static class ShopResponse {
         private String id;
         private String ownerId;
@@ -25,6 +30,7 @@ public class ShopDTO {
         private Integer reviewCount;
         private List<ServiceDTO.ServiceResponse> services;
         private List<String> photoUrls;
+        private List<PhotoResponse> photos;
         private boolean isFavourited;
         private boolean isOpen;
         private String todayHours;

@@ -138,6 +138,23 @@ export default function OwnerProfileScreen({ navigation }: any) {
     }
   };
 
+  const deleteGalleryPhoto = (photoId: string) => {
+    Alert.alert('Delete Photo', 'Remove this photo from your gallery?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            await shopsAPI.deleteGalleryPhoto(photoId);
+            loadShop();
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete photo');
+          }
+        },
+      },
+    ]);
+  };
+
   const addService = async () => {
     if (!newService.name || !newService.price || !newService.durationMinutes) {
       Alert.alert('Error', 'Please fill in all service fields');
@@ -231,8 +248,13 @@ export default function OwnerProfileScreen({ navigation }: any) {
           </Text>
         </View>
         <View style={styles.photosGrid}>
-          {shop?.photoUrls?.map((url: string, i: number) => (
-            <Image key={i} source={{ uri: url }} style={[styles.photoTile, { backgroundColor: theme.surfaceSecondary }]} />
+          {(shop?.photos || []).map((photo: any) => (
+            <View key={photo.id}>
+              <Image source={{ uri: photo.imageUrl }} style={[styles.photoTile, { backgroundColor: theme.surfaceSecondary }]} />
+              <TouchableOpacity style={styles.photoDeleteBtn} onPress={() => deleteGalleryPhoto(photo.id)}>
+                <Text style={styles.photoDeleteText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           ))}
           <TouchableOpacity
             style={[styles.addPhotoTile, { borderColor: theme.accent, backgroundColor: theme.surfaceSecondary }]}
@@ -536,6 +558,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   addPhotoPlus: { fontSize: 26, fontWeight: '700' },
+  photoDeleteBtn: {
+    position: 'absolute', top: 6, right: 6,
+    backgroundColor: '#000a', borderRadius: 11,
+    width: 22, height: 22, justifyContent: 'center', alignItems: 'center',
+  },
+  photoDeleteText: { color: '#f44336', fontSize: 12, fontWeight: '700' },
   addPhotoText: { fontSize: 12, marginTop: 4 },
   hoursCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,

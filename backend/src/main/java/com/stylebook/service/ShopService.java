@@ -228,6 +228,15 @@ public class ShopService {
                 .map(ShopPhoto::getImageUrl)
                 .collect(Collectors.toList());
         response.setPhotoUrls(photoUrls);
+        response.setPhotos(shopPhotoRepository.findByShopOrderByCreatedAtDesc(shop)
+                .stream()
+                .map(photo -> {
+                    ShopDTO.PhotoResponse pr = new ShopDTO.PhotoResponse();
+                    pr.setId(photo.getId().toString());
+                    pr.setImageUrl(photo.getImageUrl());
+                    return pr;
+                })
+                .collect(Collectors.toList()));
         if (currentUserId != null) {
             User currentUser = userRepository.findById(currentUserId).orElse(null);
             if (currentUser != null) {
