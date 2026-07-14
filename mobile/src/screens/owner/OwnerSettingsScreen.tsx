@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { shopsAPI } from '../../services/api';
@@ -17,8 +17,8 @@ const PLAN_INFO: any = {
   ENTERPRISE: { price: 'GHS 300/mo', desc: 'Multi-branch + sponsored pins' },
 };
 
-export default function OwnerSettingsScreen({ navigation }: any) {
-  const { logout } = useAuth();
+export default function OwnerSettingsScreen() {
+  const { user, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
   const [shop, setShop] = useState<any>(null);
   const [settings, setSettings] = useState({
@@ -40,8 +40,15 @@ export default function OwnerSettingsScreen({ navigation }: any) {
     AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   };
 
+  const handleLogout = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: logout },
+    ]);
+  };
+
   const Row = ({ label, sub, value, onChange }: any) => (
-    <View style={[styles.row, { borderBottomColor: theme.border }]}>
+    <View style={styles.row}>
       <View style={styles.rowText}>
         <Text style={[styles.rowLabel, { color: theme.text }]}>{label}</Text>
         {sub && <Text style={[styles.rowSub, { color: theme.textSecondary }]}>{sub}</Text>}
@@ -60,32 +67,28 @@ export default function OwnerSettingsScreen({ navigation }: any) {
   return (
     <ThemedScreen>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.backText, { color: theme.accent }]}>← Back</Text>
-        </TouchableOpacity>
         <Text style={[styles.title, { color: theme.text }]}>Settings</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>YOUR PLAN</Text>
-        <View style={[styles.planCard, { backgroundColor: theme.surface, borderColor: theme.accent }]}>
-          <View style={styles.planRow}>
-            <Text style={[styles.planName, { color: theme.text }]}>
-              {plan} {plan === 'PRO' ? '⭐' : ''}
-            </Text>
-            <Text style={[styles.planPrice, { color: theme.accent }]}>
-              {PLAN_INFO[plan]?.price}
+        {/* Profile card */}
+        <View style={[styles.profileCard, { backgroundColor: theme.surface }]}>
+          <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
+            <Text style={styles.avatarText}>
+              {(shop?.name || user?.fullName || 'S').charAt(0).toUpperCase()}
             </Text>
           </View>
-          <Text style={[styles.planDesc, { color: theme.textSecondary }]}>
-            {PLAN_INFO[plan]?.desc}
-          </Text>
+          <Text style={[styles.profileName, { color: theme.text }]}>{shop?.name}</Text>
+          <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>{user?.email}</Text>
+          <View style={[styles.planPill, { borderColor: theme.border }]}>
+            <Text style={[styles.planPillText, { color: theme.textSecondary }]}>{plan} PLAN</Text>
+          </View>
         </View>
 
         <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>APPEARANCE</Text>
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
           <Row
             label={isDark ? '🌙 Dark Mode' : '☀️ Light Mode'}
-            sub="Light mode is the default"
+            sub={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
             value={isDark}
             onChange={toggleTheme}
           />
@@ -101,7 +104,7 @@ export default function OwnerSettingsScreen({ navigation }: any) {
           />
           <Row
             label="Booking Alerts"
-            sub="New booking requests (45s before auto-confirm)"
+            sub="Get notified of new bookings"
             value={settings.bookingAlerts}
             onChange={(v: boolean) => updateSetting('bookingAlerts', v)}
           />
@@ -113,45 +116,74 @@ export default function OwnerSettingsScreen({ navigation }: any) {
           />
         </View>
 
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>YOUR PLAN</Text>
+        <View style={[styles.planCard, { backgroundColor: theme.surface, borderColor: theme.accent }]}>
+          <View style={styles.planRow}>
+            <Text style={[styles.planName, { color: theme.text }]}>
+              {plan} {plan === 'PRO' ? '⭐' : ''}
+            </Text>
+            <Text style={[styles.planPrice, { color: theme.accent }]}>
+              {PLAN_INFO[plan]?.price}
+            </Text>
+          </View>
+          <Text style={[styles.planDesc, { color: theme.textSecondary }]}>
+            {PLAN_INFO[plan]?.desc}
+          </Text>
+        </View>
+
         <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>ABOUT</Text>
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <View style={[styles.row, { borderBottomColor: theme.border }]}>
+          <View style={styles.row}>
             <Text style={[styles.rowLabel, { color: theme.text }]}>App Version</Text>
             <Text style={[styles.rowValue, { color: theme.textSecondary }]}>{APP_VERSION}</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={[styles.signOutBtn, { borderColor: '#f44336' }]} onPress={logout}>
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout}>
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
+        <View style={{ height: 24 }} />
       </ScrollView>
     </ThemedScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { padding: 20, paddingTop: 16 },
-  backText: { fontSize: 16, marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: '900' },
-  scroll: { padding: 20, paddingTop: 0 },
-  sectionTitle: { fontSize: 12, fontWeight: '700', marginTop: 20, marginBottom: 8, letterSpacing: 1 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
+  title: { fontSize: 22, fontWeight: '900' },
+  scroll: { padding: 20, paddingTop: 8 },
+  profileCard: {
+    alignItems: 'center', borderRadius: 20, padding: 24,
+  },
+  avatar: {
+    width: 72, height: 72, borderRadius: 36,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+  },
+  avatarText: { color: '#000', fontSize: 30, fontWeight: '900' },
+  profileName: { fontSize: 18, fontWeight: '800', textAlign: 'center' },
+  profileEmail: { fontSize: 13, marginTop: 4 },
+  planPill: {
+    borderRadius: 16, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 6, marginTop: 12,
+  },
+  planPillText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 12, fontWeight: '700', marginTop: 24, marginBottom: 8, letterSpacing: 1 },
   card: { borderRadius: 16, paddingHorizontal: 16 },
-  planCard: { borderRadius: 16, padding: 16, borderWidth: 1.5 },
-  planRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  planName: { fontSize: 18, fontWeight: '800' },
-  planPrice: { fontSize: 15, fontWeight: '700' },
-  planDesc: { fontSize: 13 },
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 14, borderBottomWidth: 0,
+    paddingVertical: 14,
   },
   rowText: { flex: 1, marginRight: 12 },
   rowLabel: { fontSize: 15, fontWeight: '600' },
   rowSub: { fontSize: 12, marginTop: 2 },
   rowValue: { fontSize: 14 },
+  planCard: { borderRadius: 16, padding: 16, borderWidth: 1.5 },
+  planRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  planName: { fontSize: 18, fontWeight: '800' },
+  planPrice: { fontSize: 15, fontWeight: '700' },
+  planDesc: { fontSize: 13 },
   signOutBtn: {
     borderRadius: 12, padding: 16, alignItems: 'center',
-    borderWidth: 1, marginTop: 32,
+    borderWidth: 1, borderColor: '#f44336', marginTop: 32,
   },
   signOutText: { color: '#f44336', fontSize: 15, fontWeight: '700' },
 });

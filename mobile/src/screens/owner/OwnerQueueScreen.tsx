@@ -7,7 +7,7 @@ import { queueAPI } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import ThemedScreen from '../../components/ThemedScreen';
 
-export default function OwnerQueueScreen() {
+export default function OwnerQueueScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +89,11 @@ export default function OwnerQueueScreen() {
   return (
     <ThemedScreen>
       <View style={styles.header}>
+        {navigation?.canGoBack?.() && (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={{ color: theme.accent, fontSize: 16, marginBottom: 8 }}>← Back</Text>
+          </TouchableOpacity>
+        )}
         <Text style={[styles.title, { color: theme.text }]}>Walk-in Queue</Text>
       </View>
 

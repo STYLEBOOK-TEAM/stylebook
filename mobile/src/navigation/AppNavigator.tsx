@@ -27,6 +27,7 @@ import CreatePostScreen from '../screens/owner/CreatePostScreen';
 import OwnerReviewsScreen from '../screens/owner/OwnerReviewsScreen';
 import OwnerQueueScreen from '../screens/owner/OwnerQueueScreen';
 import OwnerSettingsScreen from '../screens/owner/OwnerSettingsScreen';
+import OpeningHoursScreen from '../screens/owner/OpeningHoursScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -100,7 +101,7 @@ function OwnerTabs() {
         component={OwnerDashboardScreen}
         options={{
           tabBarLabel: 'Dashboard',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📊</Text>,
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏠</Text>,
         }}
       />
       <Tab.Screen
@@ -112,35 +113,19 @@ function OwnerTabs() {
         }}
       />
       <Tab.Screen
-        name="OwnerQueue"
-        component={OwnerQueueScreen}
-        options={{
-          tabBarLabel: 'Queue',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🚶</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="CreatePost"
-        component={CreatePostScreen}
-        options={{
-          tabBarLabel: 'Post',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>➕</Text>,
-        }}
-      />
-      <Tab.Screen
         name="OwnerProfile"
         component={OwnerProfileScreen}
         options={{
-          tabBarLabel: 'My Shop',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>✂️</Text>,
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>✏️</Text>,
         }}
       />
       <Tab.Screen
-        name="OwnerReviews"
-        component={OwnerReviewsScreen}
+        name="OwnerSettings"
+        component={OwnerSettingsScreen}
         options={{
-          tabBarLabel: 'Reviews',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>⭐</Text>,
+          tabBarLabel: 'Settings',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>⚙️</Text>,
         }}
       />
     </Tab.Navigator>
@@ -185,7 +170,10 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="OwnerTabs" component={OwnerTabs} />
-            <Stack.Screen name="OwnerSettings" component={OwnerSettingsScreen} />
+            <Stack.Screen name="CreatePost" component={CreatePostScreen} />
+            <Stack.Screen name="OwnerReviews" component={OwnerReviewsScreen} />
+            <Stack.Screen name="OwnerQueue" component={OwnerQueueScreen} />
+            <Stack.Screen name="OpeningHours" component={OpeningHoursScreen} />
           </>
         )}
       </Stack.Navigator>

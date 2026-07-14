@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ThemedScreen from '../../components/ThemedScreen';
 
-export default function OwnerReviewsScreen() {
+export default function OwnerReviewsScreen({ navigation }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const [reviews, setReviews] = useState([]);
@@ -118,6 +118,11 @@ export default function OwnerReviewsScreen() {
   return (
     <ThemedScreen>
       <View style={styles.header}>
+        {navigation?.canGoBack?.() && (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={{ color: theme.accent, fontSize: 16, marginBottom: 8 }}>← Back</Text>
+          </TouchableOpacity>
+        )}
         <Text style={[styles.title, { color: theme.text }]}>Customer Reviews</Text>
       </View>
 

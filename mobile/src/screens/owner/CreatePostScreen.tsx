@@ -71,6 +71,11 @@ export default function CreatePostScreen({ navigation }: any) {
   return (
     <ThemedScreen>
       <ScrollView contentContainerStyle={styles.scroll}>
+        {navigation?.canGoBack?.() && (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={{ color: theme.accent, fontSize: 16, marginBottom: 8 }}>← Back</Text>
+          </TouchableOpacity>
+        )}
         <Text style={[styles.title, { color: theme.text }]}>Create Post</Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Share your work with the StyleBook community
