@@ -498,4 +498,6 @@ const styles = StyleSheet.create({
   cityIconText: { fontSize: 18 },
   cityInfo: { flex: 1 },
   cityLabel: { fontSize: 15, fontWeight: '600' },
-  citySubtitle: { fontSize:
+  citySubtitle: { fontSize: 12, marginTop: 2 },
+  cityCheck: { fontSize: 18, fontWeight: '700' },
+});

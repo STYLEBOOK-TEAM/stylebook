@@ -226,4 +226,16 @@ public class ShopService {
         List<String> photoUrls = shopPhotoRepository.findByShopOrderByCreatedAtDesc(shop)
                 .stream()
                 .map(ShopPhoto::getImageUrl)
-                .collect
+                .collect(Collectors.toList());
+        response.setPhotoUrls(photoUrls);
+        if (currentUserId != null) {
+            User currentUser = userRepository.findById(currentUserId).orElse(null);
+            if (currentUser != null) {
+                response.setFavourited(
+                    favouriteRepository.existsByCustomerAndShop(currentUser, shop)
+                );
+            }
+        }
+        return response;
+    }
+}
