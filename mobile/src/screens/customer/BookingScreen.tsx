@@ -7,8 +7,6 @@ import { bookingsAPI } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import ThemedScreen from '../../components/ThemedScreen';
 
-const DAY_KEYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
 export default function BookingScreen({ route, navigation }: any) {
   const { shop } = route.params;
   const { theme } = useTheme();
@@ -18,80 +16,68 @@ export default function BookingScreen({ route, navigation }: any) {
   const [selectedTime, setSelectedTime] = useState('');
   const [slots, setSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
-  const [dayOpen, setDayOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState<any>(null);
   const [countdown, setCountdown] = useState(45);
 
-  const openingHours = (() => {
+  useEffect(() => {
+    if (step === 4 && countdown <= 0) {
+      navigation.navigate('CustomerTabs', { screen: 'Bookings' });
+    }
+  }, [countdown, step]);
+
+  const dayKeys = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+  const parseHours = () => {
     try {
       return shop.openingHours ? JSON.parse(shop.openingHours) : {};
     } catch {
       return {};
     }
-  })();
-
-  const isDayClosed = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const range = openingHours[DAY_KEYS[d.getDay()]];
-    return !range || range.trim() === '' || range.trim().toUpperCase() === 'CLOSED';
   };
 
   const getNext7Days = () => {
+    const hours = parseHours();
     const days = [];
     for (let i = 0; i < 7; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
-      const value = date.toISOString().split('T')[0];
+      const key = dayKeys[date.getDay()];
+      const value = hours[key];
+      const closed = !value || value === 'CLOSED' || !String(value).includes('-');
       days.push({
         label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' :
           date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        value,
-        closed: isDayClosed(value),
+        value: date.toISOString().split('T')[0],
+        closed,
+        hours: closed ? 'Closed' : String(value),
       });
     }
     return days;
   };
 
-  const loadSlots = async (dateStr: string) => {
-    if (!selectedService) return;
-    setSlotsLoading(true);
-    setSlots([]);
+  const selectDate = async (day: any) => {
+    if (day.closed) return;
+    setSelectedDate(day.value);
     setSelectedTime('');
+    setSlots([]);
+    setSlotsLoading(true);
     try {
-      const response = await bookingsAPI.getSlots(shop.id, dateStr, selectedService.id);
-      setDayOpen(response.data.open);
-      setSlots(response.data.slots || []);
+      const response = await bookingsAPI.getSlots(shop.id, day.value, selectedService.id);
+      setSlots(response.data.open ? (response.data.slots || []) : []);
     } catch (error) {
-      setDayOpen(true);
       setSlots([]);
     } finally {
       setSlotsLoading(false);
     }
   };
 
-  const pickDate = (dateStr: string, closed: boolean) => {
-    if (closed) return;
-    setSelectedDate(dateStr);
-    loadSlots(dateStr);
+  const selectService = (service: any) => {
+    setSelectedService(service);
+    setSelectedDate('');
+    setSelectedTime('');
+    setSlots([]);
   };
-
-  // countdown after booking is created — then straight back to Bookings tab
-  useEffect(() => {
-    if (step !== 4 || !booking) return;
-    setCountdown(45);
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          navigation.navigate('CustomerTabs', { screen: 'Bookings' });
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [step, booking]);
 
   const confirmBooking = async () => {
     if (!selectedService || !selectedDate || !selectedTime) {
@@ -108,11 +94,15 @@ export default function BookingScreen({ route, navigation }: any) {
       });
       setBooking(response.data);
       setStep(4);
+      setCountdown(45);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) clearInterval(timer);
+          return prev - 1;
+        });
+      }, 1000);
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.error || 'Failed to create booking');
-      // slot may have been taken while choosing — refresh
-      if (selectedDate) loadSlots(selectedDate);
-      setStep(2);
     } finally {
       setLoading(false);
     }
@@ -151,7 +141,7 @@ export default function BookingScreen({ route, navigation }: any) {
                   { backgroundColor: theme.surface, borderColor: theme.border },
                   selectedService?.id === service.id && { borderColor: theme.accent, backgroundColor: theme.accentLight },
                 ]}
-                onPress={() => setSelectedService(service)}
+                onPress={() => selectService(service)}
               >
                 <View>
                   <Text style={[styles.serviceName, { color: theme.text }]}>{service.name}</Text>
@@ -162,13 +152,7 @@ export default function BookingScreen({ route, navigation }: any) {
             ))}
             <TouchableOpacity
               style={[styles.nextBtn, { backgroundColor: selectedService ? theme.accent : theme.surfaceSecondary }]}
-              onPress={() => {
-                if (!selectedService) return;
-                setSelectedDate('');
-                setSelectedTime('');
-                setSlots([]);
-                setStep(2);
-              }}
+              onPress={() => selectedService && setStep(2)}
               disabled={!selectedService}
             >
               <Text style={[styles.nextBtnText, { color: selectedService ? '#000' : theme.textTertiary }]}>Next →</Text>
@@ -190,7 +174,7 @@ export default function BookingScreen({ route, navigation }: any) {
                     day.closed && { opacity: 0.4 },
                     selectedDate === day.value && { backgroundColor: theme.accent, borderColor: theme.accent },
                   ]}
-                  onPress={() => pickDate(day.value, day.closed)}
+                  onPress={() => selectDate(day)}
                   disabled={day.closed}
                 >
                   <Text style={[
@@ -199,26 +183,23 @@ export default function BookingScreen({ route, navigation }: any) {
                   ]}>
                     {day.label}
                   </Text>
-                  {day.closed && (
-                    <Text style={[styles.dateClosedText, { color: theme.textTertiary }]}>Closed</Text>
-                  )}
+                  <Text style={[
+                    styles.dateChipHours,
+                    { color: selectedDate === day.value ? '#000' : day.closed ? '#f44336' : theme.textTertiary }
+                  ]}>
+                    {day.hours}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
-            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-              Available Times {selectedService ? `(${selectedService.durationMinutes} min slots)` : ''}
-            </Text>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>Available Times</Text>
             {!selectedDate ? (
               <Text style={[styles.slotsHint, { color: theme.textTertiary }]}>
                 Pick a date to see available times
               </Text>
             ) : slotsLoading ? (
-              <ActivityIndicator color={theme.accent} style={{ marginVertical: 24 }} />
-            ) : !dayOpen ? (
-              <Text style={[styles.slotsHint, { color: theme.textTertiary }]}>
-                The shop is closed on this day
-              </Text>
+              <ActivityIndicator color={theme.accent} style={{ marginVertical: 20 }} />
             ) : slots.length === 0 ? (
               <Text style={[styles.slotsHint, { color: theme.textTertiary }]}>
                 No available times left on this day — try another date
@@ -265,8 +246,8 @@ export default function BookingScreen({ route, navigation }: any) {
               <Text style={[styles.confirmShop, { color: theme.accent }]}>{shop.name}</Text>
               {[
                 { label: 'Service', value: selectedService?.name },
-                { label: 'Duration', value: `${selectedService?.durationMinutes} mins` },
-                { label: 'Price', value: `GHS ${selectedService?.price}` },
+                { label: 'Duration', value: selectedService?.durationMinutes + ' mins' },
+                { label: 'Price', value: 'GHS ' + selectedService?.price },
                 { label: 'Date', value: selectedDate },
                 { label: 'Time', value: selectedTime },
               ].map((row) => (
@@ -277,12 +258,12 @@ export default function BookingScreen({ route, navigation }: any) {
               ))}
             </View>
             <View style={[styles.pendingNotice, { backgroundColor: theme.accentLight, borderColor: theme.border }]}>
-              <Text style={[styles.pendingNoticeTitle, { color: theme.accent }]}>How booking works</Text>
+              <Text style={[styles.pendingNoticeTitle, { color: theme.accent }]}>ℹ️ How booking works</Text>
               <Text style={[styles.pendingNoticeText, { color: theme.textSecondary }]}>
-                1. Your request is sent to the shop as PENDING.{'\n'}
-                2. The shop can confirm it right away.{'\n'}
-                3. If the shop doesn't respond within 45 seconds, it's confirmed automatically.{'\n'}
-                4. You'll find it under Bookings, where you can reschedule or cancel anytime.
+                1. Your request is sent to the shop{'\n'}
+                2. The shop can confirm it right away{'\n'}
+                3. If they don't respond in 45 seconds, it's confirmed automatically{'\n'}
+                4. Find it under Bookings — you'll get a reminder 10 minutes before
               </Text>
             </View>
             <TouchableOpacity
@@ -301,12 +282,12 @@ export default function BookingScreen({ route, navigation }: any) {
             <Text style={styles.successEmoji}>🎉</Text>
             <Text style={[styles.successTitle, { color: theme.text }]}>Booking Requested!</Text>
             <Text style={[styles.successSubtitle, { color: theme.textSecondary }]}>
-              Taking you to your bookings...
+              Your booking is pending confirmation
             </Text>
             <View style={[styles.countdownCard, { backgroundColor: theme.accentLight, borderColor: theme.accent }]}>
               <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>Auto-confirms in</Text>
-              <Text style={[styles.countdown, { color: theme.accent }]}>{countdown}s</Text>
-              <Text style={[styles.countdownSub, { color: theme.textSecondary }]}>if the shop doesn't respond first</Text>
+              <Text style={[styles.countdown, { color: theme.accent }]}>{Math.max(countdown, 0)}s</Text>
+              <Text style={[styles.countdownSub, { color: theme.textSecondary }]}>if shop doesn't respond</Text>
             </View>
             <View style={[styles.confirmCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <Text style={[styles.confirmShop, { color: theme.accent }]}>{shop.name}</Text>
@@ -360,7 +341,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, marginRight: 8, alignItems: 'center',
   },
   dateChipText: { fontSize: 13, fontWeight: '600' },
-  dateClosedText: { fontSize: 10, marginTop: 2 },
+  dateChipHours: { fontSize: 11, marginTop: 2 },
   timesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   timeChip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
   timeChipText: { fontSize: 13 },
@@ -373,8 +354,8 @@ const styles = StyleSheet.create({
   confirmLabel: { fontSize: 14 },
   confirmValue: { fontSize: 14, fontWeight: '600' },
   pendingNotice: { borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1 },
-  pendingNoticeTitle: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  pendingNoticeText: { fontSize: 13, lineHeight: 20 },
+  pendingNoticeTitle: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
+  pendingNoticeText: { fontSize: 13, lineHeight: 22 },
   confirmBtn: { borderRadius: 12, padding: 18, alignItems: 'center' },
   confirmBtnText: { color: '#000', fontSize: 16, fontWeight: '700' },
   successContainer: { alignItems: 'center', paddingTop: 20 },
