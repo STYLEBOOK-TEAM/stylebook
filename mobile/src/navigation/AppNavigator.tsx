@@ -1,0 +1,194 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text, ActivityIndicator, View } from 'react-native';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+// Auth Screens
+import RoleSelectionScreen from '../screens/auth/RoleSelectionScreen';
+import CustomerLoginScreen from '../screens/auth/CustomerLoginScreen';
+import OwnerLoginScreen from '../screens/auth/OwnerLoginScreen';
+// Customer Screens
+import HomeScreen from '../screens/customer/HomeScreen';
+import ShopProfileScreen from '../screens/customer/ShopProfileScreen';
+import BookingScreen from '../screens/customer/BookingScreen';
+import BookingsScreen from '../screens/customer/BookingsScreen';
+import FeedScreen from '../screens/customer/FeedScreen';
+import CustomerProfileScreen from '../screens/customer/CustomerProfileScreen';
+import SavedShopsScreen from '../screens/customer/SavedShopsScreen';
+import MyReviewsScreen from '../screens/customer/MyReviewsScreen';
+import SettingsScreen from '../screens/customer/SettingsScreen';
+// Owner Screens
+import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
+import OwnerBookingsScreen from '../screens/owner/OwnerBookingsScreen';
+import OwnerProfileScreen from '../screens/owner/OwnerProfileScreen';
+import CreatePostScreen from '../screens/owner/CreatePostScreen';
+import OwnerReviewsScreen from '../screens/owner/OwnerReviewsScreen';
+import OwnerQueueScreen from '../screens/owner/OwnerQueueScreen';
+import OwnerSettingsScreen from '../screens/owner/OwnerSettingsScreen';
+
+const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+function CustomerTabs() {
+  const { theme } = useTheme();
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarStyle: {
+          backgroundColor: theme.tabBar,
+          borderTopColor: theme.tabBarBorder,
+        },
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.textTertiary,
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: 'Discover',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏠</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="Feed"
+        component={FeedScreen}
+        options={{
+          tabBarLabel: 'Feed',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📸</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="Bookings"
+        component={BookingsScreen}
+        options={{
+          tabBarLabel: 'Bookings',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📅</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={CustomerProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>👤</Text>,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+function OwnerTabs() {
+  const { theme } = useTheme();
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarStyle: {
+          backgroundColor: theme.tabBar,
+          borderTopColor: theme.tabBarBorder,
+        },
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.textTertiary,
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="Dashboard"
+        component={OwnerDashboardScreen}
+        options={{
+          tabBarLabel: 'Dashboard',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📊</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="OwnerBookings"
+        component={OwnerBookingsScreen}
+        options={{
+          tabBarLabel: 'Bookings',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📅</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="OwnerQueue"
+        component={OwnerQueueScreen}
+        options={{
+          tabBarLabel: 'Queue',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🚶</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="CreatePost"
+        component={CreatePostScreen}
+        options={{
+          tabBarLabel: 'Post',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>➕</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="OwnerProfile"
+        component={OwnerProfileScreen}
+        options={{
+          tabBarLabel: 'My Shop',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>✂️</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="OwnerReviews"
+        component={OwnerReviewsScreen}
+        options={{
+          tabBarLabel: 'Reviews',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>⭐</Text>,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+export default function AppNavigator() {
+  const { user, isLoading } = useAuth();
+  const { theme } = useTheme();
+
+  if (isLoading) {
+    return (
+      <View style={{
+        flex: 1,
+        backgroundColor: theme.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
+        <ActivityIndicator color={theme.accent} size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!user ? (
+          <>
+            <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+            <Stack.Screen name="CustomerLogin" component={CustomerLoginScreen} />
+            <Stack.Screen name="OwnerLogin" component={OwnerLoginScreen} />
+          </>
+        ) : user.role === 'CUSTOMER' ? (
+          <>
+            <Stack.Screen name="CustomerTabs" component={CustomerTabs} />
+            <Stack.Screen name="ShopProfile" component={ShopProfileScreen} />
+            <Stack.Screen name="Booking" component={BookingScreen} />
+            <Stack.Screen name="SavedShops" component={SavedShopsScreen} />
+            <Stack.Screen name="MyReviews" component={MyReviewsScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="OwnerTabs" component={OwnerTabs} />
+            <Stack.Screen name="OwnerSettings" component={OwnerSettingsScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
