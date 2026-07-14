@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Set REMEMBER_LOGIN to false to always ask for login on restart
       // Set to true to stay logged in between restarts
-      const REMEMBER_LOGIN = true;
+      const REMEMBER_LOGIN = false;
 
       if (!REMEMBER_LOGIN) {
         await AsyncStorage.removeItem('token');
