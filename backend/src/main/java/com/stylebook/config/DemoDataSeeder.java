@@ -123,6 +123,24 @@ public class DemoDataSeeder implements CommandLineRunner {
         System.out.println("[DemoData] Done — 10 shops, 2 customers seeded. Owner password: demo123");
     }
 
+    private static final java.util.Map<Shop.ShopCategory, String[]> CATEGORY_KEYWORDS =
+        java.util.Map.of(
+            Shop.ShopCategory.BARBERSHOP,
+                new String[]{"barbershop", "barber", "haircut", "barbershop", "barber", "haircut"},
+            Shop.ShopCategory.SALON,
+                new String[]{"hairsalon", "hairstyle", "hairdresser", "braids", "hairsalon", "hairstyle"},
+            Shop.ShopCategory.SPA,
+                new String[]{"spa", "massage", "wellness", "spa", "massage", "wellness"},
+            Shop.ShopCategory.NAILS,
+                new String[]{"manicure", "nails", "nailpolish", "pedicure", "manicure", "nails"});
+
+    private String themedImage(Shop.ShopCategory category, String seed, int index, int w, int h) {
+        String[] keywords = CATEGORY_KEYWORDS.get(category);
+        String keyword = keywords[index % keywords.length];
+        int lock = Math.abs((seed + index).hashCode()) % 999;
+        return "https://loremflickr.com/" + w + "/" + h + "/" + keyword + "?lock=" + lock;
+    }
+
     private User customer(String name, String email, String phone) {
         User u = User.builder()
             .fullName(name).email(email).phone(phone)
@@ -153,7 +171,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             .latitude(lat).longitude(lng)
             .locationDescription(locationDesc)
             .openingHours(hours)
-            .coverImageUrl("https://picsum.photos/seed/" + imgSeed + "cover/800/500")
+            .coverImageUrl(themedImage(category, imgSeed, 0, 800, 500))
             .plan(Shop.SubscriptionPlan.FREE)
             .isActive(true).avgRating(0.0).reviewCount(0)
             .build();
@@ -174,15 +192,15 @@ public class DemoDataSeeder implements CommandLineRunner {
         for (int i = 1; i <= 3; i++) {
             shopPhotoRepository.save(ShopPhoto.builder()
                 .shop(shop)
-                .imageUrl("https://picsum.photos/seed/" + imgSeed + "g" + i + "/600/600")
+                .imageUrl(themedImage(category, imgSeed, i, 600, 600))
                 .build());
         }
 
         postRepository.save(Post.builder().shop(shop)
-            .imageUrl("https://picsum.photos/seed/" + imgSeed + "p1/700/700")
+            .imageUrl(themedImage(category, imgSeed, 4, 700, 700))
             .caption(caption1).likeCount(0).build());
         postRepository.save(Post.builder().shop(shop)
-            .imageUrl("https://picsum.photos/seed/" + imgSeed + "p2/700/700")
+            .imageUrl(themedImage(category, imgSeed, 5, 700, 700))
             .caption(caption2).likeCount(0).build());
 
         Booking b1 = bookingRepository.save(Booking.builder()
