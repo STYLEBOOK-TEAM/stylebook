@@ -26,7 +26,19 @@ public class AuthService {
 
     @Transactional
     public AuthResponse registerCustomer(CustomerRegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        User existing = userRepository.findByEmail(request.getEmail()).orElse(null);
+        if (existing != null) {
+            if (!existing.isEmailVerified() && existing.getRole() == User.UserRole.CUSTOMER) {
+                // Unverified account: let them re-register (update details, fresh code)
+                existing.setFullName(request.getFullName());
+                existing.setPhone(request.getPhone());
+                existing.setPassword(passwordEncoder.encode(request.getPassword()));
+                userRepository.save(existing);
+                issueOtp(existing);
+                String tk = jwtUtils.generateToken(existing.getId(), existing.getEmail(),
+                        existing.getRole().name());
+                return new AuthResponse(tk, existing, null);
+            }
             throw new RuntimeException("Email already in use");
         }
 
@@ -49,7 +61,21 @@ public class AuthService {
 
     @Transactional
     public AuthResponse registerOwner(OwnerRegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        User existingOwner = userRepository.findByEmail(request.getEmail()).orElse(null);
+        if (existingOwner != null) {
+            if (!existingOwner.isEmailVerified() && existingOwner.getRole() == User.UserRole.OWNER) {
+                existingOwner.setFullName(request.getFullName());
+                existingOwner.setPhone(request.getPhone());
+                existingOwner.setPassword(passwordEncoder.encode(request.getPassword()));
+                userRepository.save(existingOwner);
+                issueOtp(existingOwner);
+                String tk = jwtUtils.generateToken(existingOwner.getId(), existingOwner.getEmail(),
+                        existingOwner.getRole().name());
+                String existingShopId = shopRepository.findByOwner(existingOwner)
+                        .stream().findFirst()
+                        .map(sh -> sh.getId().toString()).orElse(null);
+                return new AuthResponse(tk, existingOwner, existingShopId);
+            }
             throw new RuntimeException("Email already in use");
         }
 
