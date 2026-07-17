@@ -1,10 +1,12 @@
 package com.stylebook.service;
 
 import com.stylebook.entity.User;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,19 +21,27 @@ public class EmailService {
     @Value("${stylebook.app.name}")
     private String appName;
 
-    public void sendOtpEmail(User user, String code) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setSubject(appName + " - Your verification code");
-        message.setText(
-            "Hi " + user.getFullName() + ",\n\n" +
-            "Your " + appName + " verification code is:\n\n" +
-            "    " + code + "\n\n" +
-            "It expires in 10 minutes.\n\n" +
-            "If you did not create an account, please ignore this email.\n\n" +
-            "The StyleBook Team"
-        );
-        mailSender.send(message);
+    @Value("${spring.mail.username}")
+    private String fromAddress;
+
+    public void sendOtpEmail(User user, String code) throws Exception {
+        MimeMessage mime = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mime, "utf-8");
+        helper.setFrom(fromAddress, appName);
+        helper.setTo(user.getEmail());
+        helper.setSubject("Welcome to " + appName + " — confirm your email");
+        helper.setText(
+            "Hello " + user.getFullName() + ",\n\n" +
+            "Thank you for joining " + appName + ", Ghana's booking platform for salons, " +
+            "barbershops, spas and nail studios.\n\n" +
+            "To finish setting up your account, enter this verification code in the app:\n\n" +
+            "        " + code + "\n\n" +
+            "The code is valid for the next 10 minutes. If you did not create a " + appName +
+            " account, you can safely ignore this message and nothing will happen.\n\n" +
+            "See you in the app,\n" +
+            "The " + appName + " Team\n" +
+            appName + " — Book your next look in seconds", false);
+        mailSender.send(mime);
     }
 
     public void sendVerificationEmail(User user) {
