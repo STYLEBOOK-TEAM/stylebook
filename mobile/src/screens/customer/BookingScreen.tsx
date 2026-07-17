@@ -277,128 +277,6 @@ export default function BookingScreen({ route, navigation }: any) {
           </View>
         )}
       </ScrollView>
-
-            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>Available Times</Text>
-            {!selectedDate ? (
-              <Text style={[styles.slotsHint, { color: theme.textTertiary }]}>
-                Pick a date to see available times
-              </Text>
-            ) : slotsLoading ? (
-              <ActivityIndicator color={theme.accent} style={{ marginVertical: 20 }} />
-            ) : slots.length === 0 ? (
-              <Text style={[styles.slotsHint, { color: theme.textTertiary }]}>
-                No available times left on this day — try another date
-              </Text>
-            ) : (
-              <View style={styles.timesGrid}>
-                {slots.map((time) => (
-                  <TouchableOpacity
-                    key={time}
-                    style={[
-                      styles.timeChip,
-                      { backgroundColor: theme.surface, borderColor: theme.border },
-                      selectedTime === time && { backgroundColor: theme.accent, borderColor: theme.accent },
-                    ]}
-                    onPress={() => setSelectedTime(time)}
-                  >
-                    <Text style={[
-                      styles.timeChipText,
-                      { color: selectedTime === time ? '#000' : theme.textSecondary }
-                    ]}>
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[styles.nextBtn, { backgroundColor: (!selectedDate || !selectedTime) ? theme.surfaceSecondary : theme.accent }]}
-              onPress={() => selectedDate && selectedTime && setStep(3)}
-              disabled={!selectedDate || !selectedTime}
-            >
-              <Text style={[styles.nextBtnText, { color: (!selectedDate || !selectedTime) ? theme.textTertiary : '#000' }]}>
-                Next →
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {step === 3 && (
-          <View>
-            <Text style={[styles.stepTitle, { color: theme.text }]}>Confirm Booking</Text>
-            <View style={[styles.confirmCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Text style={[styles.confirmShop, { color: theme.accent }]}>{shop.name}</Text>
-              {[
-                { label: 'Service', value: selectedService?.name },
-                { label: 'Duration', value: selectedService?.durationMinutes + ' mins' },
-                { label: 'Price', value: 'GHS ' + selectedService?.price },
-                { label: 'Date', value: selectedDate },
-                { label: 'Time', value: selectedTime },
-              ].map((row) => (
-                <View key={row.label} style={[styles.confirmRow, { borderBottomColor: theme.border }]}>
-                  <Text style={[styles.confirmLabel, { color: theme.textSecondary }]}>{row.label}</Text>
-                  <Text style={[styles.confirmValue, { color: theme.text }]}>{row.value}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={[styles.pendingNotice, { backgroundColor: theme.accentLight, borderColor: theme.border }]}>
-              <Text style={[styles.pendingNoticeTitle, { color: theme.accent }]}>ℹ️ How booking works</Text>
-              <Text style={[styles.pendingNoticeText, { color: theme.textSecondary }]}>
-                1. Your request is sent to the shop{'\n'}
-                2. The shop can confirm it right away{'\n'}
-                3. If they don't respond in 45 seconds, it's confirmed automatically{'\n'}
-                4. Find it under Bookings — you'll get a reminder 10 minutes before
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.confirmBtn, { backgroundColor: theme.accent }]}
-              onPress={confirmBooking}
-              disabled={loading}
-            >
-              {loading ? <ActivityIndicator color="#000" /> :
-                <Text style={styles.confirmBtnText}>Confirm Booking</Text>}
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {step === 4 && booking && (
-          <View style={styles.successContainer}>
-            <Text style={styles.successEmoji}>🎉</Text>
-            <Text style={[styles.successTitle, { color: theme.text }]}>Booking Requested!</Text>
-            <Text style={[styles.successSubtitle, { color: theme.textSecondary }]}>
-              Your booking is pending confirmation
-            </Text>
-            <View style={[styles.countdownCard, { backgroundColor: theme.accentLight, borderColor: theme.accent }]}>
-              <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>Auto-confirms in</Text>
-              <Text style={[styles.countdown, { color: theme.accent }]}>{Math.max(countdown, 0)}s</Text>
-              <Text style={[styles.countdownSub, { color: theme.textSecondary }]}>if shop doesn't respond</Text>
-            </View>
-            <View style={[styles.confirmCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Text style={[styles.confirmShop, { color: theme.accent }]}>{shop.name}</Text>
-              {[
-                { label: 'Service', value: booking.serviceName },
-                { label: 'Date', value: booking.bookingDate },
-                { label: 'Time', value: booking.bookingTime },
-                { label: 'Status', value: 'PENDING' },
-              ].map((row) => (
-                <View key={row.label} style={[styles.confirmRow, { borderBottomColor: theme.border }]}>
-                  <Text style={[styles.confirmLabel, { color: theme.textSecondary }]}>{row.label}</Text>
-                  <Text style={[styles.confirmValue, { color: row.label === 'Status' ? '#FF9800' : theme.text }]}>
-                    {row.value}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={[styles.doneBtn, { backgroundColor: theme.accent }]}
-              onPress={() => navigation.navigate('CustomerTabs', { screen: 'Bookings' })}
-            >
-              <Text style={styles.doneBtnText}>View My Bookings</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
     </ThemedScreen>
   );
 }
@@ -443,18 +321,9 @@ const styles = StyleSheet.create({
   pendingNoticeText: { fontSize: 13, lineHeight: 22 },
   confirmBtn: { borderRadius: 12, padding: 18, alignItems: 'center' },
   confirmBtnText: { color: '#000', fontSize: 16, fontWeight: '700' },
-  successContainer: { alignItems: 'center', paddingTop: 20 },
+  successContainer: { alignItems: 'center', paddingTop: 60 },
   successEmoji: { fontSize: 64, marginBottom: 16 },
   successTitle: { fontSize: 28, fontWeight: '900', marginBottom: 8 },
   successSubtitle: { fontSize: 16, marginBottom: 12, textAlign: 'center' },
   successNote: { fontSize: 13 },
-  countdownCard: {
-    borderRadius: 16, padding: 20, alignItems: 'center',
-    marginBottom: 24, borderWidth: 1, width: '100%',
-  },
-  countdownLabel: { fontSize: 14, marginBottom: 8 },
-  countdown: { fontSize: 48, fontWeight: '900' },
-  countdownSub: { fontSize: 12, marginTop: 4 },
-  doneBtn: { borderRadius: 12, padding: 18, alignItems: 'center', width: '100%', marginTop: 8 },
-  doneBtnText: { color: '#000', fontSize: 16, fontWeight: '700' },
 });
