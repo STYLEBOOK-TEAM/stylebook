@@ -66,6 +66,17 @@ public class AuthDTO {
     }
 
     @Data
+    public static class VerifyOtpRequest {
+        private String email;
+        private String code;
+    }
+
+    @Data
+    public static class ResendOtpRequest {
+        private String email;
+    }
+
+    @Data
     public static class AuthResponse {
         private String token;
         private String role;

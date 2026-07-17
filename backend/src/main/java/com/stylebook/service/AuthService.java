@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.security.SecureRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -37,17 +37,10 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(User.UserRole.CUSTOMER)
                 .emailVerified(false)
-                .emailVerificationToken(UUID.randomUUID().toString())
-                .emailVerificationTokenExpiry(LocalDateTime.now().plusHours(24))
                 .build();
 
         userRepository.save(user);
-
-        try {
-            emailService.sendVerificationEmail(user);
-        } catch (Exception e) {
-            // Log but don't fail registration
-        }
+        issueOtp(user);
 
         String token = jwtUtils.generateToken(user.getId(), user.getEmail(),
                 user.getRole().name());
@@ -67,8 +60,6 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(User.UserRole.OWNER)
                 .emailVerified(false)
-                .emailVerificationToken(UUID.randomUUID().toString())
-                .emailVerificationTokenExpiry(LocalDateTime.now().plusHours(24))
                 .build();
 
         userRepository.save(user);
@@ -88,12 +79,7 @@ public class AuthService {
                 .build();
 
         shopRepository.save(shop);
-
-        try {
-            emailService.sendVerificationEmail(user);
-        } catch (Exception e) {
-            // Log but don't fail registration
-        }
+        issueOtp(user);
 
         String token = jwtUtils.generateToken(user.getId(), user.getEmail(),
                 user.getRole().name());
@@ -106,6 +92,11 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
+        }
+
+        if (!user.isEmailVerified()) {
+            issueOtp(user);
+            throw new RuntimeException("EMAIL_NOT_VERIFIED");
         }
 
         String shopId = null;
@@ -123,19 +114,70 @@ public class AuthService {
     }
 
     @Transactional
-    public MessageResponse verifyEmail(String token) {
-        User user = userRepository.findByEmailVerificationToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid verification token"));
+    public AuthResponse verifyOtp(VerifyOtpRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        if (user.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Verification token has expired");
+        if (user.isEmailVerified()) {
+            // already verified — just log them in
+        } else {
+            if (user.getEmailVerificationToken() == null ||
+                user.getEmailVerificationTokenExpiry() == null ||
+                user.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Code has expired. Tap 'Resend code' to get a new one.");
+            }
+            if (!user.getEmailVerificationToken().equals(request.getCode().trim())) {
+                throw new RuntimeException("Wrong code. Check your email and try again.");
+            }
+            user.setEmailVerified(true);
+            user.setEmailVerificationToken(null);
+            user.setEmailVerificationTokenExpiry(null);
+            userRepository.save(user);
         }
 
-        user.setEmailVerified(true);
-        user.setEmailVerificationToken(null);
-        user.setEmailVerificationTokenExpiry(null);
+        String shopId = null;
+        if (user.getRole() == User.UserRole.OWNER) {
+            shopId = shopRepository.findByOwner(user)
+                    .stream()
+                    .findFirst()
+                    .map(shop -> shop.getId().toString())
+                    .orElse(null);
+        }
+
+        String token = jwtUtils.generateToken(user.getId(), user.getEmail(),
+                user.getRole().name());
+        return new AuthResponse(token, user, shopId);
+    }
+
+    @Transactional
+    public MessageResponse resendOtp(ResendOtpRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        if (user.isEmailVerified()) {
+            throw new RuntimeException("This email is already verified. Just sign in.");
+        }
+
+        issueOtp(user);
+        return new MessageResponse("A new code has been sent to " + user.getEmail());
+    }
+
+    private void issueOtp(User user) {
+        String code = String.format("%06d", new SecureRandom().nextInt(1000000));
+        user.setEmailVerificationToken(code);
+        user.setEmailVerificationTokenExpiry(LocalDateTime.now().plusMinutes(10));
         userRepository.save(user);
 
-        return new MessageResponse("Email verified successfully");
+        // Console fallback so a demo never gets stuck if email isn't configured
+        System.out.println("========================================");
+        System.out.println("[StyleBook OTP] " + user.getEmail() + " -> " + code);
+        System.out.println("========================================");
+
+        try {
+            emailService.sendOtpEmail(user, code);
+        } catch (Exception e) {
+            System.out.println("[StyleBook OTP] Email sending failed (" + e.getMessage()
+                    + ") — use the code printed above.");
+        }
     }
 }

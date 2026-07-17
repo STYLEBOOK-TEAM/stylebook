@@ -17,6 +17,8 @@ export const authAPI = {
   registerCustomer: (data: any) => api.post('/auth/register/customer', data),
   registerOwner: (data: any) => api.post('/auth/register/owner', data),
   login: (data: any) => api.post('/auth/login', data),
+  verifyOtp: (data: any) => api.post('/auth/verify-otp', data),
+  resendOtp: (data: any) => api.post('/auth/resend-otp', data),
 };
 export const shopsAPI = {
   getAll: (query?: string, category?: string) => api.get('/shops', { params: { query, category } }),

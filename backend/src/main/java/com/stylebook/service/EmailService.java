@@ -19,6 +19,21 @@ public class EmailService {
     @Value("${stylebook.app.name}")
     private String appName;
 
+    public void sendOtpEmail(User user, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject(appName + " - Your verification code");
+        message.setText(
+            "Hi " + user.getFullName() + ",\n\n" +
+            "Your " + appName + " verification code is:\n\n" +
+            "    " + code + "\n\n" +
+            "It expires in 10 minutes.\n\n" +
+            "If you did not create an account, please ignore this email.\n\n" +
+            "The StyleBook Team"
+        );
+        mailSender.send(message);
+    }
+
     public void sendVerificationEmail(User user) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());

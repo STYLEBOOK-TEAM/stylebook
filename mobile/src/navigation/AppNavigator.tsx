@@ -9,6 +9,7 @@ import { useTheme } from '../context/ThemeContext';
 import RoleSelectionScreen from '../screens/auth/RoleSelectionScreen';
 import CustomerLoginScreen from '../screens/auth/CustomerLoginScreen';
 import OwnerLoginScreen from '../screens/auth/OwnerLoginScreen';
+import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
 // Customer Screens
 import HomeScreen from '../screens/customer/HomeScreen';
 import ShopProfileScreen from '../screens/customer/ShopProfileScreen';
@@ -157,6 +158,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
             <Stack.Screen name="CustomerLogin" component={CustomerLoginScreen} />
             <Stack.Screen name="OwnerLogin" component={OwnerLoginScreen} />
+            <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
           </>
         ) : user.role === 'CUSTOMER' ? (
           <>

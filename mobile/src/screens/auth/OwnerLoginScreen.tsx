@@ -160,8 +160,16 @@ export default function OwnerLoginScreen({ navigation }: any) {
         setLoading(false);
         return;
       }
+      if (!user.emailVerified) {
+        navigation.navigate('VerifyEmail', { email: form.email.trim() });
+        return;
+      }
       await login(token, user);
     } catch (error: any) {
+      if (error.response?.data?.error === 'EMAIL_NOT_VERIFIED') {
+        navigation.navigate('VerifyEmail', { email: form.email.trim() });
+        return;
+      }
       Alert.alert('Error', error.response?.data?.error || 'Something went wrong');
     } finally {
       setLoading(false);

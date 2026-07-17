@@ -32,8 +32,15 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
-    @GetMapping("/verify-email")
-    public ResponseEntity<MessageResponse> verifyEmail(@RequestParam String token) {
-        return ResponseEntity.ok(authService.verifyEmail(token));
+    @PostMapping("/verify-otp")
+    public ResponseEntity<AuthResponse> verifyOtp(
+            @RequestBody VerifyOtpRequest request) {
+        return ResponseEntity.ok(authService.verifyOtp(request));
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<MessageResponse> resendOtp(
+            @RequestBody ResendOtpRequest request) {
+        return ResponseEntity.ok(authService.resendOtp(request));
     }
 }
