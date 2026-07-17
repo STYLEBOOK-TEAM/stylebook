@@ -123,22 +123,39 @@ public class DemoDataSeeder implements CommandLineRunner {
         System.out.println("[DemoData] Done — 10 shops, 2 customers seeded. Owner password: demo123");
     }
 
-    private static final java.util.Map<Shop.ShopCategory, String[]> CATEGORY_KEYWORDS =
+    // Configured paths to resolve the provided assets cleanly via index safely
+    private static final java.util.Map<Shop.ShopCategory, String[]> CATEGORY_IMAGES =
         java.util.Map.of(
-            Shop.ShopCategory.BARBERSHOP,
-                new String[]{"barbershop", "barber", "haircut", "barbershop", "barber", "haircut"},
-            Shop.ShopCategory.SALON,
-                new String[]{"hairsalon", "hairstyle", "hairdresser", "braids", "hairsalon", "hairstyle"},
-            Shop.ShopCategory.SPA,
-                new String[]{"spa", "massage", "wellness", "spa", "massage", "wellness"},
-            Shop.ShopCategory.NAILS,
-                new String[]{"manicure", "nails", "nailpolish", "pedicure", "manicure", "nails"});
+            Shop.ShopCategory.BARBERSHOP, new String[]{
+                "/assets/images/barber/photo_2026-07-17_11-22-37 (2).jpg", // Cover / Chair view
+                "/assets/images/barber/photo_2026-07-17_11-22-37.jpg",     // Station view
+                "/assets/images/barber/photo_2026-07-17_11-22-35.jpg",     // Tools detail
+                "/assets/images/barber/photo_2026-07-17_11-22-34.jpg",     // Counter checkout
+                "/assets/images/barber/photo_2026-07-17_11-22-33 (2).jpg", // Salon interior split
+                "/assets/images/barber/photo_2026-07-17_11-22-33.jpg",     // Vintage leather chair
+                "/assets/images/barber/photo_2026-07-17_11-22-32.jpg",     // Stylist at work
+                "/assets/images/barber/photo_2026-07-17_11-22-31.jpg",     // Graphic set
+                "/assets/images/barber/photo_2026-07-17_11-22-30.jpg",     // Close-up trim
+                "/assets/images/barber/photo_2026-07-17_11-22-29.jpg"      // Shop storefront owner
+            },
+            Shop.ShopCategory.SALON, new String[]{
+                "https://placehold.co/800x600?text=Salon+Placeholder+1",
+                "https://placehold.co/800x600?text=Salon+Placeholder+2"
+            },
+            Shop.ShopCategory.SPA, new String[]{
+                "https://placehold.co/800x600?text=Spa+Placeholder+1",
+                "https://placehold.co/800x600?text=Spa+Placeholder+2"
+            },
+            Shop.ShopCategory.NAILS, new String[]{
+                "https://placehold.co/800x600?text=Nails+Placeholder+1",
+                "https://placehold.co/800x600?text=Nails+Placeholder+2"
+            }
+        );
 
-    private String themedImage(Shop.ShopCategory category, String seed, int index, int w, int h) {
-        String[] keywords = CATEGORY_KEYWORDS.get(category);
-        String keyword = keywords[index % keywords.length];
-        int lock = Math.abs((seed + index).hashCode()) % 999;
-        return "https://loremflickr.com/" + w + "/" + h + "/" + keyword + "?lock=" + lock;
+    private String themedImage(Shop.ShopCategory category, String seed, int index) {
+        String[] images = CATEGORY_IMAGES.get(category);
+        // Safely bounds-check using modulo calculation over asset length
+        return images[Math.abs((seed + index).hashCode()) % images.length];
     }
 
     private User customer(String name, String email, String phone) {
@@ -171,7 +188,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             .latitude(lat).longitude(lng)
             .locationDescription(locationDesc)
             .openingHours(hours)
-            .coverImageUrl(themedImage(category, imgSeed, 0, 800, 500))
+            .coverImageUrl(themedImage(category, imgSeed, 0))
             .plan(Shop.SubscriptionPlan.FREE)
             .isActive(true).avgRating(0.0).reviewCount(0)
             .build();
@@ -192,15 +209,15 @@ public class DemoDataSeeder implements CommandLineRunner {
         for (int i = 1; i <= 3; i++) {
             shopPhotoRepository.save(ShopPhoto.builder()
                 .shop(shop)
-                .imageUrl(themedImage(category, imgSeed, i, 600, 600))
+                .imageUrl(themedImage(category, imgSeed, i))
                 .build());
         }
 
         postRepository.save(Post.builder().shop(shop)
-            .imageUrl(themedImage(category, imgSeed, 4, 700, 700))
+            .imageUrl(themedImage(category, imgSeed, 4))
             .caption(caption1).likeCount(0).build());
         postRepository.save(Post.builder().shop(shop)
-            .imageUrl(themedImage(category, imgSeed, 5, 700, 700))
+            .imageUrl(themedImage(category, imgSeed, 5))
             .caption(caption2).likeCount(0).build());
 
         Booking b1 = bookingRepository.save(Booking.builder()
