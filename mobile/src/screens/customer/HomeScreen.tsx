@@ -5,7 +5,7 @@ import {
   ScrollView, Modal, Image, Alert,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { shopsAPI } from '../../services/api';
+import { shopsAPI, promosAPI } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 const CATEGORIES = [
   { id: 'ALL', label: 'All', icon: '✨' },
@@ -41,6 +41,7 @@ export default function HomeScreen({ navigation }: any) {
   const [cityModal, setCityModal] = useState(false);
   const [nearMe, setNearMe] = useState(false);
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [promos, setPromos] = useState<any[]>([]);
   useEffect(() => {
     loadShops();
   }, [category, selectedCity, nearMe, userLoc]);
@@ -72,6 +73,12 @@ export default function HomeScreen({ navigation }: any) {
       }
       const noFilters = !search && category === 'ALL' && selectedCity.id === 'ALL' && !nearMe;
       setShops(data.length === 0 && noFilters ? SEED_SHOPS : data);
+      try {
+        const promoRes = await promosAPI.getAll();
+        setPromos(promoRes.data);
+      } catch (promoError) {
+        // promos are optional decoration
+      }
     } catch (error: any) {
       console.error('loadShops failed:', JSON.stringify(error.response?.data) || error.message);
     } finally {
@@ -197,6 +204,34 @@ export default function HomeScreen({ navigation }: any) {
           <ActivityIndicator color={theme.accent} size="large" style={{ marginTop: 60 }} />
         ) : (
           <>
+            {/* Promo offers */}
+            {promos.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>🎁 Promo Offers</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredList}>
+                  {promos.map((pr: any) => (
+                    <TouchableOpacity
+                      key={pr.id}
+                      style={[styles.promoCard, { backgroundColor: theme.card }]}
+                      onPress={() => navigation.navigate('ShopProfile', { shopId: pr.shopId })}
+                    >
+                      <Image source={{ uri: pr.imageUrl }} style={styles.promoImage} />
+                      <View style={styles.promoInfo}>
+                        <Text style={[styles.promoShopName, { color: theme.accent }]} numberOfLines={1}>
+                          {pr.shopName} · {pr.city}
+                        </Text>
+                        <Text style={[styles.promoDetails, { color: theme.text }]} numberOfLines={2}>
+                          {pr.details}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
             {/* Featured & Trending */}
             {featuredShops.length > 0 && (
               <View style={styles.section}>
@@ -447,6 +482,14 @@ const styles = StyleSheet.create({
   },
   featuredCategory: { fontSize: 11, fontWeight: '600' },
   featuredRating: { fontSize: 11 },
+  promoCard: {
+    width: 250, borderRadius: 16, overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+  },
+  promoImage: { width: '100%', height: 120, resizeMode: 'cover' },
+  promoInfo: { padding: 10 },
+  promoShopName: { fontSize: 12, fontWeight: '700', marginBottom: 4 },
+  promoDetails: { fontSize: 13, lineHeight: 18 },
   discoverCard: {
     marginHorizontal: 20, borderRadius: 16, overflow: 'hidden',
     marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,

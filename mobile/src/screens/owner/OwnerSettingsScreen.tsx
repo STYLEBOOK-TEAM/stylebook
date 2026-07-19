@@ -40,6 +40,29 @@ export default function OwnerSettingsScreen() {
     AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   };
 
+  const changePlan = (pl: string) => {
+    Alert.alert(
+      pl === 'FREE' ? 'Switch to Free?' : 'Upgrade to ' + pl + '?',
+      PLAN_INFO[pl]?.price + ' — ' + PLAN_INFO[pl]?.desc +
+      '\n\n(Demo mode: no payment will be charged.)',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              const response = await shopsAPI.updatePlan({ plan: pl });
+              setShop(response.data);
+              Alert.alert('Done!', 'Your shop is now on the ' + pl + ' plan.');
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.error || 'Failed to change plan');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleLogout = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -117,19 +140,42 @@ export default function OwnerSettingsScreen() {
         </View>
 
         <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>YOUR PLAN</Text>
-        <View style={[styles.planCard, { backgroundColor: theme.surface, borderColor: theme.accent }]}>
-          <View style={styles.planRow}>
-            <Text style={[styles.planName, { color: theme.text }]}>
-              {plan} {plan === 'PRO' ? '⭐' : ''}
+        {['FREE', 'PRO', 'ENTERPRISE'].map((pl) => (
+          <View
+            key={pl}
+            style={[
+              styles.planCard,
+              { backgroundColor: theme.surface, marginBottom: 10 },
+              pl === plan
+                ? { borderColor: theme.accent, borderWidth: 1.5 }
+                : { borderWidth: 0 },
+            ]}
+          >
+            <View style={styles.planRow}>
+              <Text style={[styles.planName, { color: theme.text }]}>
+                {pl} {pl === 'PRO' ? '⭐' : ''}
+              </Text>
+              <Text style={[styles.planPrice, { color: theme.accent }]}>
+                {PLAN_INFO[pl]?.price}
+              </Text>
+            </View>
+            <Text style={[styles.planDesc, { color: theme.textSecondary }]}>
+              {PLAN_INFO[pl]?.desc}
             </Text>
-            <Text style={[styles.planPrice, { color: theme.accent }]}>
-              {PLAN_INFO[plan]?.price}
-            </Text>
+            {pl === plan ? (
+              <Text style={styles.currentPlanTag}>✓ Current plan</Text>
+            ) : (
+              <TouchableOpacity
+                style={[styles.upgradeBtn, { backgroundColor: theme.accent }]}
+                onPress={() => changePlan(pl)}
+              >
+                <Text style={styles.upgradeBtnText}>
+                  {pl === 'FREE' ? 'Switch to Free' : 'Upgrade to ' + pl}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <Text style={[styles.planDesc, { color: theme.textSecondary }]}>
-            {PLAN_INFO[plan]?.desc}
-          </Text>
-        </View>
+        ))}
 
         <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>ABOUT</Text>
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
@@ -181,6 +227,9 @@ const styles = StyleSheet.create({
   planName: { fontSize: 18, fontWeight: '800' },
   planPrice: { fontSize: 15, fontWeight: '700' },
   planDesc: { fontSize: 13 },
+  currentPlanTag: { color: '#2E7D32', fontWeight: '700', fontSize: 12, marginTop: 10 },
+  upgradeBtn: { borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 12 },
+  upgradeBtnText: { color: '#000', fontWeight: '700', fontSize: 13 },
   signOutBtn: {
     borderRadius: 12, padding: 16, alignItems: 'center',
     borderWidth: 1, borderColor: '#f44336', marginTop: 32,

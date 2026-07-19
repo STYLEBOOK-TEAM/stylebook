@@ -32,6 +32,7 @@ export const shopsAPI = {
   addService: (data: any) => api.post('/shops/my-shop/services', data),
   updateService: (serviceId: string, data: any) => api.put(`/shops/my-shop/services/${serviceId}`, data),
   removeService: (serviceId: string) => api.delete(`/shops/my-shop/services/${serviceId}`),
+  updatePlan: (data: any) => api.put('/shops/my-shop/plan', data),
   toggleFavourite: (shopId: string) => api.post(`/shops/${shopId}/favourite`),
   getFavourites: () => api.get('/shops/favourites'),
 };
@@ -44,6 +45,13 @@ export const queueAPI = {
   call: (entryId: string) => api.put(`/queue/${entryId}/call`),
   complete: (entryId: string) => api.put(`/queue/${entryId}/complete`),
   remove: (entryId: string) => api.delete(`/queue/${entryId}`),
+};
+export const promosAPI = {
+  getAll: () => api.get('/promos'),
+  getMine: () => api.get('/promos/my'),
+  uploadImage: (formData: FormData) => api.post('/promos/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data: any) => api.post('/promos', data),
+  remove: (promoId: string) => api.delete(`/promos/${promoId}`),
 };
 export const bookingsAPI = {
   create: (data: any) => api.post('/bookings', data),

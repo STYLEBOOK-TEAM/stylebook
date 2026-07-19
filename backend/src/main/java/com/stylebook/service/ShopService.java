@@ -105,6 +105,23 @@ public class ShopService {
         return mapToResponse(shop, ownerId);
     }
     @Transactional
+    public ShopDTO.ShopResponse updatePlan(UUID ownerId, String plan) {
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Shop shop = shopRepository.findByOwnerAndIsActiveTrue(owner)
+                .orElseThrow(() -> new RuntimeException("Shop not found"));
+        Shop.SubscriptionPlan newPlan;
+        try {
+            newPlan = Shop.SubscriptionPlan.valueOf(plan.toUpperCase());
+        } catch (Exception e) {
+            throw new RuntimeException("Unknown plan: " + plan);
+        }
+        shop.setPlan(newPlan);
+        shopRepository.save(shop);
+        return mapToResponse(shop, ownerId);
+    }
+
+    @Transactional
     public ShopDTO.ShopResponse updateCoverPhoto(UUID ownerId, String imageUrl) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("User not found"));

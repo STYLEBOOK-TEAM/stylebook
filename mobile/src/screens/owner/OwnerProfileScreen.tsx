@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { shopsAPI } from '../../services/api';
+import { shopsAPI, promosAPI } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import ThemedScreen from '../../components/ThemedScreen';
 
@@ -31,6 +31,11 @@ export default function OwnerProfileScreen({ navigation }: any) {
   const [editModal, setEditModal] = useState(false);
   const [editService, setEditService] = useState<any>(null);
   const [editForm, setEditForm] = useState({ name: '', price: '', durationMinutes: '' });
+  const [promos, setPromos] = useState<any[]>([]);
+  const [promoModal, setPromoModal] = useState(false);
+  const [promoDetails, setPromoDetails] = useState('');
+  const [promoImage, setPromoImage] = useState<string | null>(null);
+  const [promoSaving, setPromoSaving] = useState(false);
 
   useEffect(() => { loadShop(); }, []);
 
@@ -39,6 +44,7 @@ export default function OwnerProfileScreen({ navigation }: any) {
       const response = await shopsAPI.getMyShop();
       const s = response.data;
       setShop(s);
+      loadPromos();
       setForm({
         name: s.name || '',
         description: s.description || '',
@@ -52,6 +58,70 @@ export default function OwnerProfileScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadPromos = async () => {
+    try {
+      const response = await promosAPI.getMine();
+      setPromos(response.data);
+    } catch (error) {
+      // promo list is non-critical
+    }
+  };
+
+  const pickPromoImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [16, 10],
+      quality: 0.8,
+    });
+    if (!result.canceled) setPromoImage(result.assets[0].uri);
+  };
+
+  const submitPromo = async () => {
+    if (!promoImage) {
+      Alert.alert('Error', 'Please pick a promo picture');
+      return;
+    }
+    if (!promoDetails.trim()) {
+      Alert.alert('Error', 'Please describe your promo offer');
+      return;
+    }
+    setPromoSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri: promoImage, type: 'image/jpeg', name: 'promo.jpg',
+      } as any);
+      const upload = await promosAPI.uploadImage(formData);
+      await promosAPI.create({ imageUrl: upload.data.imageUrl, details: promoDetails.trim() });
+      setPromoModal(false);
+      setPromoImage(null);
+      setPromoDetails('');
+      loadPromos();
+      Alert.alert('Promo Live!', 'Customers can now see your offer on their home screen.');
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.error || 'Failed to create promo');
+    } finally {
+      setPromoSaving(false);
+    }
+  };
+
+  const deletePromo = (promoId: string) => {
+    Alert.alert('Delete Promo', 'Remove this promo offer?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            await promosAPI.remove(promoId);
+            loadPromos();
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete promo');
+          }
+        },
+      },
+    ]);
   };
 
   const saveProfile = async () => {
@@ -265,6 +335,43 @@ export default function OwnerProfileScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
+        {/* Promo offers */}
+        <View style={styles.galleryHeader}>
+          <Text style={[styles.h2, { color: theme.text, marginTop: 0 }]}>Promo Offers</Text>
+          <Text style={[styles.galleryCount, { color: theme.accent }]}>{shop?.plan} plan</Text>
+        </View>
+        {shop?.plan === 'FREE' ? (
+          <View style={[styles.promoLocked, { backgroundColor: theme.surface }]}>
+            <Text style={{ fontSize: 28 }}>🔒</Text>
+            <Text style={[styles.promoLockedTitle, { color: theme.text }]}>
+              Promos are for Pro & Enterprise
+            </Text>
+            <Text style={[styles.promoLockedSub, { color: theme.textSecondary }]}>
+              Upgrade your plan in Settings to post promo offers that customers see right on their home screen.
+            </Text>
+          </View>
+        ) : (
+          <View>
+            {promos.map((pr: any) => (
+              <View key={pr.id} style={[styles.promoRow, { backgroundColor: theme.surface }]}>
+                <Image source={{ uri: pr.imageUrl }} style={[styles.promoThumb, { backgroundColor: theme.surfaceSecondary }]} />
+                <Text style={[styles.promoRowText, { color: theme.text }]} numberOfLines={3}>
+                  {pr.details}
+                </Text>
+                <TouchableOpacity onPress={() => deletePromo(pr.id)}>
+                  <Text style={styles.promoDelete}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={[styles.addServiceBtn, { borderColor: theme.accent, marginTop: 4 }]}
+              onPress={() => setPromoModal(true)}
+            >
+              <Text style={[styles.addServiceText, { color: theme.accent }]}>+ Create Promo Offer</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Opening hours */}
         <TouchableOpacity
           style={[styles.hoursCard, { backgroundColor: theme.surface }]}
@@ -476,6 +583,50 @@ export default function OwnerProfileScreen({ navigation }: any) {
         <View style={{ height: 32 }} />
       </ScrollView>
 
+      {/* Create promo modal */}
+      <Modal visible={promoModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Create Promo Offer</Text>
+            <TouchableOpacity
+              style={[styles.promoPickBtn, { backgroundColor: theme.background, borderColor: theme.accent }]}
+              onPress={pickPromoImage}
+            >
+              {promoImage ? (
+                <Image source={{ uri: promoImage }} style={styles.promoPreview} />
+              ) : (
+                <Text style={[styles.promoPickText, { color: theme.accent }]}>📷 Pick promo picture</Text>
+              )}
+            </TouchableOpacity>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Offer details</Text>
+            <TextInput
+              style={[styles.input, styles.textArea, { backgroundColor: theme.background, color: theme.text }]}
+              value={promoDetails}
+              onChangeText={setPromoDetails}
+              placeholderTextColor={theme.textTertiary}
+              placeholder="e.g. 20% off all braids this month — book any braiding service and save!"
+              multiline numberOfLines={3}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, { backgroundColor: theme.background }]}
+                onPress={() => setPromoModal(false)}
+              >
+                <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, { backgroundColor: theme.accent }]}
+                onPress={submitPromo}
+                disabled={promoSaving}
+              >
+                {promoSaving ? <ActivityIndicator color="#000" /> :
+                  <Text style={styles.modalSaveText}>Post Promo</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Edit service modal */}
       <Modal visible={editModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -565,6 +716,23 @@ const styles = StyleSheet.create({
   },
   photoDeleteText: { color: '#f44336', fontSize: 12, fontWeight: '700' },
   addPhotoText: { fontSize: 12, marginTop: 4 },
+  promoLocked: { borderRadius: 16, padding: 20, alignItems: 'center' },
+  promoLockedTitle: { fontSize: 15, fontWeight: '700', marginTop: 8 },
+  promoLockedSub: { fontSize: 13, textAlign: 'center', marginTop: 6, lineHeight: 19 },
+  promoRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderRadius: 14, padding: 10, marginBottom: 8,
+  },
+  promoThumb: { width: 74, height: 54, borderRadius: 8 },
+  promoRowText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  promoDelete: { color: '#f44336', fontSize: 16, padding: 6 },
+  promoPickBtn: {
+    borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed',
+    minHeight: 130, justifyContent: 'center', alignItems: 'center',
+    overflow: 'hidden', marginBottom: 4,
+  },
+  promoPreview: { width: '100%', height: 150 },
+  promoPickText: { fontWeight: '700', fontSize: 14 },
   hoursCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderRadius: 16, padding: 14, marginTop: 24,

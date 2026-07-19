@@ -54,6 +54,13 @@ public class ShopController {
         UUID ownerId = (UUID) authentication.getPrincipal();
         return ResponseEntity.ok(shopService.updateShop(ownerId, request));
     }
+    @PutMapping("/my-shop/plan")
+    public ResponseEntity<ShopDTO.ShopResponse> updatePlan(
+            @RequestBody java.util.Map<String, String> body,
+            Authentication authentication) {
+        UUID ownerId = (UUID) authentication.getPrincipal();
+        return ResponseEntity.ok(shopService.updatePlan(ownerId, body.get("plan")));
+    }
     @PostMapping("/my-shop/cover-photo")
     public ResponseEntity<ShopDTO.ShopResponse> uploadCoverPhoto(
             @RequestParam("file") MultipartFile file,

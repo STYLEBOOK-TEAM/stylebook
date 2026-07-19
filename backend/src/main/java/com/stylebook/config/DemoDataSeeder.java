@@ -30,6 +30,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final PostRepository postRepository;
     private final BookingRepository bookingRepository;
     private final ReviewRepository reviewRepository;
+    private final PromoRepository promoRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${stylebook.app.base-url}")
@@ -66,7 +67,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             "n17", "Fresh fades all week 💈 Walk in or book your slot",
             ama, kwame, 5, 4, "Best fade in Osu, hands down.", "Clean shop, zero waiting with the queue feature.");
 
-        seedShop("Adjoa", "adjoa@demoshops.com", "Adjoa Glam Studio", Shop.ShopCategory.SALON,
+        Shop adjoaShop = seedShop("Adjoa", "adjoa@demoshops.com", "Adjoa Glam Studio", Shop.ShopCategory.SALON,
             "Accra", 5.6150, -0.1740, "East Legon, American House junction", HOURS_STANDARD,
             new String[][]{{"Knotless Braids", "350", "180"}, {"Silk Press", "150", "90"},
                 {"Wig Installation", "200", "120"}, {"Wash & Treatment", "80", "45"}},
@@ -74,7 +75,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             "n24", "Preview your next color before you commit ✨",
             ama, kwame, 5, 5, "My braids lasted 6 weeks. Perfection.", "Adjoa treats your hair like her own.");
 
-        seedShop("Efua", "efua@demoshops.com", "Serenity Spa & Wellness", Shop.ShopCategory.SPA,
+        Shop serenityShop = seedShop("Efua", "efua@demoshops.com", "Serenity Spa & Wellness", Shop.ShopCategory.SPA,
             "Accra", 5.5913, -0.2087, "Airport Residential, near Marina Mall", HOURS_SPA,
             new String[][]{{"Full Body Massage", "250", "90"}, {"Facial Treatment", "180", "60"},
                 {"Hot Stone Therapy", "300", "120"}, {"Foot Reflexology", "120", "45"}},
@@ -106,7 +107,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             "n10", "Find us at Community 1 💅 Pedicure Tuesdays — 20% off",
             ama, kwame, 4, 4, "My acrylics always last a month.", "Cute designs, gentle hands.");
 
-        seedShop("Kojo", "kojo@demoshops.com", "Meridian Barbers", Shop.ShopCategory.BARBERSHOP,
+        Shop meridianShop = seedShop("Kojo", "kojo@demoshops.com", "Meridian Barbers", Shop.ShopCategory.BARBERSHOP,
             "Tema", 5.6790, -0.0080, "Community 25, Meridian Mall area", HOURS_BARBER,
             new String[][]{{"Executive Cut", "60", "40"}, {"Buzz Cut", "25", "15"},
                 {"Beard Trim & Line", "30", "20"}, {"Hot Towel Shave", "45", "30"}},
@@ -138,7 +139,15 @@ public class DemoDataSeeder implements CommandLineRunner {
             "n16", "Friday rush? Join the queue from home 👑",
             ama, kwame, 4, 4, "Tamale's finest, no argument.", "The royal package is worth every cedi.");
 
-        System.out.println("[DemoData] Done — 10 shops, 2 customers seeded. Owner password: demo123");
+        // Paid plans + promo offers (promos are a Pro/Enterprise feature)
+        upgrade(adjoaShop, Shop.SubscriptionPlan.PRO);
+        upgrade(meridianShop, Shop.SubscriptionPlan.PRO);
+        upgrade(serenityShop, Shop.SubscriptionPlan.ENTERPRISE);
+        promo(adjoaShop, "n7", "Grand month special — 20% off all braids! Book any braiding service this month and pay 20% less.");
+        promo(meridianShop, "n22", "Bring a friend: two Executive Cuts for GHS 100. Weekdays only, book ahead.");
+        promo(serenityShop, "n9", "Couples package — book two massages, save GHS 100. Perfect weekend escape.");
+
+        System.out.println("[DemoData] Done — 10 shops, 2 customers, 3 promos seeded. Owner password: demo123");
     }
 
     private User customer(String name, String email, String phone) {
@@ -151,7 +160,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         return userRepository.save(u);
     }
 
-    private void seedShop(String ownerFirst, String email, String shopName, Shop.ShopCategory category,
+    private Shop seedShop(String ownerFirst, String email, String shopName, Shop.ShopCategory category,
                           String city, double lat, double lng, String locationDesc, String hours,
                           String[][] services, String coverImg, String[] galleryImgs,
                           String postImg, String postCaption,
@@ -220,5 +229,16 @@ public class DemoDataSeeder implements CommandLineRunner {
         shop.setAvgRating(Math.round(((rating1 + rating2) / 2.0) * 10.0) / 10.0);
         shop.setReviewCount(2);
         shopRepository.save(shop);
+        return shop;
+    }
+
+    private void upgrade(Shop shop, Shop.SubscriptionPlan plan) {
+        shop.setPlan(plan);
+        shopRepository.save(shop);
+    }
+
+    private void promo(Shop shop, String image, String details) {
+        promoRepository.save(Promo.builder()
+            .shop(shop).imageUrl(img(image)).details(details).build());
     }
 }
