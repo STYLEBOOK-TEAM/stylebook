@@ -37,7 +37,6 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
     private final FavouriteRepository favouriteRepository;
-    private final QueueEntryRepository queueEntryRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${stylebook.app.base-url}")
@@ -205,9 +204,6 @@ public class DemoDataSeeder implements CommandLineRunner {
             .filter(l -> demoPostIds.contains(l.getPost().getId())
                 || demoUserIds.contains(l.getUser().getId())).toList());
         postRepository.deleteAll(demoPosts);
-        queueEntryRepository.deleteAll(queueEntryRepository.findAll().stream()
-            .filter(q -> demoShopIds.contains(q.getShop().getId())
-                || demoUserIds.contains(q.getCustomer().getId())).toList());
         bookingRepository.deleteAll(bookingRepository.findAll().stream()
             .filter(b -> demoShopIds.contains(b.getShop().getId())
                 || demoUserIds.contains(b.getCustomer().getId())).toList());
