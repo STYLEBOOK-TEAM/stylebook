@@ -52,6 +52,21 @@ export default function ShopProfileScreen({ route, navigation }: any) {
     }
   };
 
+  const shareShop = async () => {
+    try {
+      const parts = [
+        `Check out ${shop?.name} on StyleBook! 💈`,
+        `${shop?.category} in ${shop?.city}`,
+        shop?.locationDescription ? `📍 ${shop.locationDescription}` : null,
+        shop?.avgRating > 0 ? `⭐ ${shop.avgRating.toFixed(1)} (${shop.reviewCount} reviews)` : null,
+        shop?.googleMapsLink ? `Directions: ${shop.googleMapsLink}` : null,
+      ].filter(Boolean);
+      await Share.share({ message: parts.join('\n') });
+    } catch (error) {
+      // user dismissed the share sheet
+    }
+  };
+
   const toggleFavourite = async () => {
     try {
       await shopsAPI.toggleFavourite(shopId);
