@@ -36,23 +36,6 @@ export const shopsAPI = {
   toggleFavourite: (shopId: string) => api.post(`/shops/${shopId}/favourite`),
   getFavourites: () => api.get('/shops/favourites'),
 };
-export const queueAPI = {
-  join: (data: any) => api.post('/queue/join', data),
-  getMy: () => api.get('/queue/my'),
-  leave: (entryId: string) => api.put(`/queue/${entryId}/leave`),
-  getShopSummary: (shopId: string) => api.get(`/queue/shop/${shopId}/summary`),
-  getShopQueue: () => api.get('/queue/shop'),
-  call: (entryId: string) => api.put(`/queue/${entryId}/call`),
-  complete: (entryId: string) => api.put(`/queue/${entryId}/complete`),
-  remove: (entryId: string) => api.delete(`/queue/${entryId}`),
-};
-export const promosAPI = {
-  getAll: () => api.get('/promos'),
-  getMine: () => api.get('/promos/my'),
-  uploadImage: (formData: FormData) => api.post('/promos/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  create: (data: any) => api.post('/promos', data),
-  remove: (promoId: string) => api.delete(`/promos/${promoId}`),
-};
 export const bookingsAPI = {
   create: (data: any) => api.post('/bookings', data),
   getSlots: (shopId: string, date: string, serviceId: string) =>

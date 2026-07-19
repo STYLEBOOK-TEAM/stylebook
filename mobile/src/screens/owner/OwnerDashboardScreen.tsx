@@ -94,7 +94,6 @@ export default function OwnerDashboardScreen({ navigation }: any) {
     { emoji: '✏️', title: 'Profile & Services', sub: 'Update shop details and services', screen: 'OwnerProfile' },
     { emoji: '📸', title: 'Create Post', sub: 'Share your work on the feed', screen: 'CreatePost' },
     { emoji: '⭐', title: 'Customer Reviews', sub: reviews.length + ' reviews', screen: 'OwnerReviews' },
-    { emoji: '🚶', title: 'Walk-in Queue', sub: 'Manage customers waiting now', screen: 'OwnerQueue' },
   ];
 
   return (

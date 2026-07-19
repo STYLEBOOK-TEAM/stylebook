@@ -4,7 +4,7 @@ import {
   ScrollView, ActivityIndicator, Alert, Linking, Image,
   TextInput, RefreshControl, Modal, Share,
 } from 'react-native';
-import { shopsAPI, reviewsAPI, queueAPI } from '../../services/api';
+import { shopsAPI, reviewsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ThemedScreen from '../../components/ThemedScreen';
@@ -24,10 +24,6 @@ export default function ShopProfileScreen({ route, navigation }: any) {
   const [reviewText, setReviewText] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [refreshing, setRefreshing] = useState(false);
-  const [queueSummary, setQueueSummary] = useState<any>(null);
-  const [myQueueEntry, setMyQueueEntry] = useState<any>(null);
-  const [queueModal, setQueueModal] = useState(false);
-  const [joiningQueue, setJoiningQueue] = useState(false);
 
   useEffect(() => {
     if (shopId) {
@@ -35,13 +31,6 @@ export default function ShopProfileScreen({ route, navigation }: any) {
     } else {
       setLoading(false);
     }
-  }, [shopId]);
-
-  useEffect(() => {
-    if (!shopId) return;
-    loadQueue();
-    const interval = setInterval(loadQueue, 20000);
-    return () => clearInterval(interval);
   }, [shopId]);
 
   const loadShop = async () => {
@@ -55,76 +44,11 @@ export default function ShopProfileScreen({ route, navigation }: any) {
       setIsFavourited(shopRes.data.isFavourited);
       setReviews(reviewsRes.data);
       setBreakdown(breakdownRes.data);
-      loadQueue();
     } catch (error) {
       Alert.alert('Error', 'Failed to load shop');
     } finally {
       setLoading(false);
       setRefreshing(false);
-    }
-  };
-
-  const loadQueue = async () => {
-    try {
-      const [summaryRes, myRes] = await Promise.all([
-        queueAPI.getShopSummary(shopId),
-        queueAPI.getMy(),
-      ]);
-      setQueueSummary(summaryRes.data);
-      setMyQueueEntry(myRes.data && myRes.data.id ? myRes.data : null);
-    } catch (error) {
-      // queue is non-critical; ignore load errors
-    }
-  };
-
-  const joinQueue = async (serviceId?: string) => {
-    setJoiningQueue(true);
-    try {
-      const response = await queueAPI.join({ shopId, serviceId });
-      setMyQueueEntry(response.data);
-      setQueueModal(false);
-      Alert.alert(
-        'Joined the queue!',
-        `You're #${response.data.position} in line. Estimated wait: ~${response.data.estimatedWaitMinutes} min.`
-      );
-      loadQueue();
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to join queue');
-    } finally {
-      setJoiningQueue(false);
-    }
-  };
-
-  const leaveQueue = () => {
-    Alert.alert('Leave Queue', 'Are you sure you want to leave the queue?', [
-      { text: 'Stay', style: 'cancel' },
-      {
-        text: 'Leave', style: 'destructive',
-        onPress: async () => {
-          try {
-            await queueAPI.leave(myQueueEntry.id);
-            setMyQueueEntry(null);
-            loadQueue();
-          } catch (error) {
-            Alert.alert('Error', 'Failed to leave queue');
-          }
-        },
-      },
-    ]);
-  };
-
-  const shareShop = async () => {
-    try {
-      const parts = [
-        `Check out ${shop?.name} on StyleBook! 💈`,
-        `${shop?.category} in ${shop?.city}`,
-        shop?.locationDescription ? `📍 ${shop.locationDescription}` : null,
-        shop?.avgRating > 0 ? `⭐ ${shop.avgRating.toFixed(1)} (${shop.reviewCount} reviews)` : null,
-        shop?.googleMapsLink ? `Directions: ${shop.googleMapsLink}` : null,
-      ].filter(Boolean);
-      await Share.share({ message: parts.join('\n') });
-    } catch (error) {
-      // user dismissed the share sheet
     }
   };
 
@@ -198,8 +122,6 @@ export default function ShopProfileScreen({ route, navigation }: any) {
   }
 
   const { isOpen, todayHours } = getOpenStatus();
-  const inThisQueue = myQueueEntry && myQueueEntry.shopId === shopId;
-  const inOtherQueue = myQueueEntry && myQueueEntry.shopId !== shopId;
 
   return (
     <ThemedScreen>
@@ -290,51 +212,6 @@ export default function ShopProfileScreen({ route, navigation }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* Walk-in Queue */}
-          {user?.role === 'CUSTOMER' && (
-            <View style={[styles.queueCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              {inThisQueue ? (
-                myQueueEntry.status === 'IN_SERVICE' ? (
-                  <Text style={[styles.queueTitle, { color: theme.accent }]}>
-                    💈 You're being served — it's your turn!
-                  </Text>
-                ) : (
-                  <>
-                    <Text style={[styles.queueTitle, { color: theme.text }]}>
-                      🚶 You're #{myQueueEntry.position} in line
-                    </Text>
-                    <Text style={[styles.queueSub, { color: theme.textSecondary }]}>
-                      Estimated wait: ~{myQueueEntry.estimatedWaitMinutes} min
-                      {myQueueEntry.serviceName ? ` • ${myQueueEntry.serviceName}` : ''}
-                    </Text>
-                    <TouchableOpacity style={[styles.queueLeaveBtn, { borderColor: theme.border }]} onPress={leaveQueue}>
-                      <Text style={styles.queueLeaveBtnText}>Leave Queue</Text>
-                    </TouchableOpacity>
-                  </>
-                )
-              ) : inOtherQueue ? (
-                <Text style={[styles.queueSub, { color: theme.textSecondary }]}>
-                  🚶 You're already in the queue at {myQueueEntry.shopName}. Leave it to join this one.
-                </Text>
-              ) : (
-                <>
-                  <Text style={[styles.queueTitle, { color: theme.text }]}>
-                    🚶 Walk-in queue: {queueSummary?.waitingCount || 0} waiting
-                    {queueSummary?.waitingCount > 0 ? ` (~${queueSummary.estimatedWaitMinutes} min)` : ''}
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.queueJoinBtn, { backgroundColor: theme.accent }, !isOpen && styles.bookBtnDisabled]}
-                    onPress={() => isOpen && setQueueModal(true)}
-                    disabled={!isOpen}
-                  >
-                    <Text style={styles.queueJoinBtnText}>
-                      {isOpen ? 'Join Queue' : 'Queue closed'}
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          )}
         </View>
 
         {/* Tabs */}
@@ -472,52 +349,6 @@ export default function ShopProfileScreen({ route, navigation }: any) {
         </View>
       </ScrollView>
 
-      {/* Join Queue Modal */}
-      <Modal visible={queueModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Join Walk-in Queue</Text>
-            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              What service do you want? (helps estimate wait times)
-            </Text>
-            <ScrollView style={{ maxHeight: 320 }}>
-              {shop?.services?.map((service: any) => (
-                <TouchableOpacity
-                  key={service.id}
-                  style={[styles.modalServiceItem, { borderBottomColor: theme.border }]}
-                  onPress={() => joinQueue(service.id)}
-                  disabled={joiningQueue}
-                >
-                  <View>
-                    <Text style={[styles.modalServiceName, { color: theme.text }]}>{service.name}</Text>
-                    <Text style={[styles.modalServiceMeta, { color: theme.textSecondary }]}>
-                      GHS {service.price} • {service.durationMinutes} mins
-                    </Text>
-                  </View>
-                  <Text style={[styles.modalServiceArrow, { color: theme.accent }]}>›</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                style={[styles.modalServiceItem, { borderBottomColor: theme.border }]}
-                onPress={() => joinQueue(undefined)}
-                disabled={joiningQueue}
-              >
-                <View>
-                  <Text style={[styles.modalServiceName, { color: theme.text }]}>Not sure yet</Text>
-                  <Text style={[styles.modalServiceMeta, { color: theme.textSecondary }]}>
-                    I'll decide at the shop (~30 mins)
-                  </Text>
-                </View>
-                <Text style={[styles.modalServiceArrow, { color: theme.accent }]}>›</Text>
-              </TouchableOpacity>
-            </ScrollView>
-            {joiningQueue && <ActivityIndicator color={theme.accent} style={{ marginTop: 12 }} />}
-            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setQueueModal(false)}>
-              <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </ThemedScreen>
   );
 }

@@ -26,7 +26,6 @@ import OwnerBookingsScreen from '../screens/owner/OwnerBookingsScreen';
 import OwnerProfileScreen from '../screens/owner/OwnerProfileScreen';
 import CreatePostScreen from '../screens/owner/CreatePostScreen';
 import OwnerReviewsScreen from '../screens/owner/OwnerReviewsScreen';
-import OwnerQueueScreen from '../screens/owner/OwnerQueueScreen';
 import OwnerSettingsScreen from '../screens/owner/OwnerSettingsScreen';
 import OpeningHoursScreen from '../screens/owner/OpeningHoursScreen';
 
@@ -174,7 +173,6 @@ export default function AppNavigator() {
             <Stack.Screen name="OwnerTabs" component={OwnerTabs} />
             <Stack.Screen name="CreatePost" component={CreatePostScreen} />
             <Stack.Screen name="OwnerReviews" component={OwnerReviewsScreen} />
-            <Stack.Screen name="OwnerQueue" component={OwnerQueueScreen} />
             <Stack.Screen name="OpeningHours" component={OpeningHoursScreen} />
           </>
         )}
