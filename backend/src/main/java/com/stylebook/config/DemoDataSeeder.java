@@ -31,6 +31,10 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final BookingRepository bookingRepository;
     private final ReviewRepository reviewRepository;
     private final PromoRepository promoRepository;
+    private final CommentRepository commentRepository;
+    private final LikeRepository likeRepository;
+    private final FavouriteRepository favouriteRepository;
+    private final QueueEntryRepository queueEntryRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${stylebook.app.base-url}")
@@ -47,12 +51,20 @@ public class DemoDataSeeder implements CommandLineRunner {
         return baseUrl + "/uploads/" + name + ".jpg";
     }
 
+    /** Bump this whenever demo data changes — old data is wiped and reseeded automatically. */
+    private static final String SEED_VERSION = "0200000003";
+
     @Override
     @Transactional
     public void run(String... args) {
-        if (userRepository.existsByEmail("kofi@demoshops.com")) {
-            System.out.println("[DemoData] Demo shops already present — skipping seeding.");
+        User marker = userRepository.findByEmail("kofi@demoshops.com").orElse(null);
+        if (marker != null && SEED_VERSION.equals(marker.getPhone())) {
+            System.out.println("[DemoData] Demo shops up to date (version " + SEED_VERSION + ") — skipping.");
             return;
+        }
+        if (marker != null) {
+            System.out.println("[DemoData] Outdated demo data found — wiping and reseeding...");
+            wipeDemoData();
         }
         System.out.println("[DemoData] Seeding demo shops...");
 
@@ -150,6 +162,61 @@ public class DemoDataSeeder implements CommandLineRunner {
         System.out.println("[DemoData] Done — 10 shops, 2 customers, 3 promos seeded. Owner password: demo123");
     }
 
+    private void wipeDemoData() {
+        java.util.Set<java.util.UUID> demoUserIds = new java.util.HashSet<>();
+        java.util.List<User> demoUsers = new java.util.ArrayList<>();
+        for (User u : userRepository.findAll()) {
+            if (u.getEmail() != null && u.getEmail().endsWith("@demoshops.com")) {
+                demoUsers.add(u);
+                demoUserIds.add(u.getId());
+            }
+        }
+        java.util.Set<java.util.UUID> demoShopIds = new java.util.HashSet<>();
+        java.util.List<Shop> demoShops = new java.util.ArrayList<>();
+        for (Shop sh : shopRepository.findAll()) {
+            if (demoUserIds.contains(sh.getOwner().getId())) {
+                demoShops.add(sh);
+                demoShopIds.add(sh.getId());
+            }
+        }
+        java.util.Set<java.util.UUID> demoPostIds = new java.util.HashSet<>();
+        java.util.List<Post> demoPosts = new java.util.ArrayList<>();
+        for (Post po : postRepository.findAll()) {
+            if (demoShopIds.contains(po.getShop().getId())) {
+                demoPosts.add(po);
+                demoPostIds.add(po.getId());
+            }
+        }
+        reviewRepository.deleteAll(reviewRepository.findAll().stream()
+            .filter(r -> demoShopIds.contains(r.getShop().getId())
+                || demoUserIds.contains(r.getCustomer().getId())).toList());
+        commentRepository.deleteAll(commentRepository.findAll().stream()
+            .filter(c -> demoPostIds.contains(c.getPost().getId())
+                || demoUserIds.contains(c.getUser().getId())).toList());
+        likeRepository.deleteAll(likeRepository.findAll().stream()
+            .filter(l -> demoPostIds.contains(l.getPost().getId())
+                || demoUserIds.contains(l.getUser().getId())).toList());
+        postRepository.deleteAll(demoPosts);
+        queueEntryRepository.deleteAll(queueEntryRepository.findAll().stream()
+            .filter(q -> demoShopIds.contains(q.getShop().getId())
+                || demoUserIds.contains(q.getCustomer().getId())).toList());
+        bookingRepository.deleteAll(bookingRepository.findAll().stream()
+            .filter(b -> demoShopIds.contains(b.getShop().getId())
+                || demoUserIds.contains(b.getCustomer().getId())).toList());
+        favouriteRepository.deleteAll(favouriteRepository.findAll().stream()
+            .filter(f -> demoShopIds.contains(f.getShop().getId())
+                || demoUserIds.contains(f.getCustomer().getId())).toList());
+        promoRepository.deleteAll(promoRepository.findAll().stream()
+            .filter(pr -> demoShopIds.contains(pr.getShop().getId())).toList());
+        shopPhotoRepository.deleteAll(shopPhotoRepository.findAll().stream()
+            .filter(ph -> demoShopIds.contains(ph.getShop().getId())).toList());
+        serviceRepository.deleteAll(serviceRepository.findAll().stream()
+            .filter(sv -> demoShopIds.contains(sv.getShop().getId())).toList());
+        shopRepository.deleteAll(demoShops);
+        userRepository.deleteAll(demoUsers);
+        System.out.println("[DemoData] Old demo data removed (" + demoShops.size() + " shops).");
+    }
+
     private User customer(String name, String email, String phone) {
         User u = User.builder()
             .fullName(name).email(email).phone(phone)
@@ -167,7 +234,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                           User cust1, User cust2, int rating1, int rating2,
                           String reviewText1, String reviewText2) {
         User owner = User.builder()
-            .fullName(ownerFirst + " (Demo Owner)").email(email).phone("0200000000")
+            .fullName(ownerFirst + " (Demo Owner)").email(email).phone(SEED_VERSION)
             .password(passwordEncoder.encode("demo123"))
             .role(User.UserRole.OWNER)
             .emailVerified(true)
