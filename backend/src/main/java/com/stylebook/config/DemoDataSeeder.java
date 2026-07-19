@@ -84,7 +84,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                 {"Beard Sculpting", "25", "20"}, {"Hair Dye & Cut", "90", "60"}},
             "n6", new String[]{"n4", "n22", "n16"},
             "n17", "Fresh fades all week 💈 Walk in or book your slot",
-            ama, kwame, 5, 4, "Best fade in Osu, hands down.", "Clean shop, zero waiting with the queue feature.");
+            ama, kwame, 5, 4, "Best fade in Osu, hands down.", "Clean shop, booking was smooth and fast.");
 
         Shop adjoaShop = seedShop("Adjoa", "adjoa@demoshops.com", "Adjoa Glam Studio", Shop.ShopCategory.SALON,
             "Accra", 5.6150, -0.1740, "East Legon, American House junction", HOURS_STANDARD,
@@ -155,7 +155,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             new String[][]{{"King's Fade", "30", "30"}, {"Afro Shape-Up", "25", "25"},
                 {"Beard Grooming", "20", "20"}, {"Royal Package", "80", "60"}},
             "n14", new String[]{"n13", "n17", "n4"},
-            "n16", "Friday rush? Join the queue from home 👑",
+            "n16", "Friday rush? Book your slot ahead and skip the wait 👑",
             ama, kwame, 4, 4, "Tamale's finest, no argument.", "The royal package is worth every cedi.");
 
         // Paid plans + promo offers (promos are a Pro/Enterprise feature)
