@@ -52,7 +52,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     }
 
     /** Bump this whenever demo data changes — old data is wiped and reseeded automatically. */
-    private static final String SEED_VERSION = "0200000003";
+    private static final String SEED_VERSION = "0200000004";
 
     @Override
     @Transactional
