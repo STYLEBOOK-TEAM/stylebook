@@ -44,6 +44,7 @@ public class ShopService {
         }
         return shops.stream()
                 .map(shop -> mapToResponse(shop, currentUserId))
+                .filter(r -> r.getServices() != null && !r.getServices().isEmpty())
                 .collect(Collectors.toList());
     }
     public List<ShopDTO.ShopResponse> getNearbyShops(double lat, double lng, UUID currentUserId) {
@@ -56,6 +57,7 @@ public class ShopService {
                     }
                     return response;
                 })
+                .filter(r -> r.getServices() != null && !r.getServices().isEmpty())
                 .sorted(Comparator.comparing(
                         ShopDTO.ShopResponse::getDistanceKm,
                         Comparator.nullsLast(Comparator.naturalOrder())))
