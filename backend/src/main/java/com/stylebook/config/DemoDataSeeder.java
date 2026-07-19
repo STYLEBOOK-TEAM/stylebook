@@ -33,6 +33,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final BookingRepository bookingRepository;
     private final ReviewRepository reviewRepository;
     private final PromoRepository promoRepository;
+    private final org.springframework.transaction.PlatformTransactionManager txManager;
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
     private final FavouriteRepository favouriteRepository;
@@ -57,17 +58,22 @@ public class DemoDataSeeder implements CommandLineRunner {
     private static final String SEED_VERSION = "0200000004";
 
     @Override
-    @Transactional
     public void run(String... args) {
         User marker = userRepository.findByEmail("kofi@demoshops.com").orElse(null);
         if (marker != null && SEED_VERSION.equals(marker.getPhone())) {
             System.out.println("[DemoData] Demo shops up to date (version " + SEED_VERSION + ") — skipping.");
             return;
         }
+        org.springframework.transaction.support.TransactionTemplate tx =
+                new org.springframework.transaction.support.TransactionTemplate(txManager);
         if (marker != null) {
             System.out.println("[DemoData] Outdated demo data found — wiping and reseeding...");
-            wipeDemoData();
+            tx.execute(status -> { wipeDemoData(); return null; });
         }
+        tx.execute(status -> { seedAll(); return null; });
+    }
+
+    private void seedAll() {
         System.out.println("[DemoData] Seeding demo shops...");
 
         User ama = customer("Ama Mensah", "ama@demoshops.com", "0244000001");
