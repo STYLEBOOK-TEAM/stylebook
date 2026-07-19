@@ -5,6 +5,7 @@ import com.stylebook.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import java.time.LocalTime;
  * Images are hand-picked files served from the backend's own /uploads folder.
  */
 @Component
+@Order(2)
 @RequiredArgsConstructor
 public class DemoDataSeeder implements CommandLineRunner {
 
