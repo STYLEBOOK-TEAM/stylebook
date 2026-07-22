@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   TextInput, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { postsAPI } from '../../services/api';
+import { postsAPI, shopsAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ThemedScreen from '../../components/ThemedScreen';
@@ -17,6 +17,20 @@ export default function CreatePostScreen({ navigation }: any) {
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [shopPlan, setShopPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchShopPlan();
+  }, []);
+
+  const fetchShopPlan = async () => {
+    try {
+      const response = await shopsAPI.getMyShop();
+      setShopPlan(response.data.plan);
+    } catch (error) {
+      console.log('Failed to fetch shop plan:', error);
+    }
+  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -131,15 +145,17 @@ export default function CreatePostScreen({ navigation }: any) {
           {caption.length}/2000
         </Text>
 
-        {/* Plan Notice */}
-        <View style={[styles.planNotice, {
-          backgroundColor: theme.accentLight,
-          borderColor: theme.border,
-        }]}>
-          <Text style={[styles.planNoticeText, { color: theme.accent }]}>
-            📊 Free plan: 5 posts maximum. Upgrade to Pro for unlimited posts.
-          </Text>
-        </View>
+        {/* Plan Notice - only shown for Free plan shops */}
+        {shopPlan === 'FREE' && (
+          <View style={[styles.planNotice, {
+            backgroundColor: theme.accentLight,
+            borderColor: theme.border,
+          }]}>
+            <Text style={[styles.planNoticeText, { color: theme.accent }]}>
+              📊 Free plan: 5 posts maximum. Upgrade to Pro for unlimited posts.
+            </Text>
+          </View>
+        )}
 
         <TouchableOpacity
           style={[styles.postBtn, {

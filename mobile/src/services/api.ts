@@ -1,12 +1,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// Find your PC's IP address by running "ipconfig" in Command Prompt
-// Look for "IPv4 Address" e.g. 192.168.1.5
-const API_BASE_URL = 'https://shortcut-diffusion-wrath.ngrok-free.dev/api';
+// Backend is hosted on Railway - works from any network, no local IP or ngrok needed
+const API_BASE_URL = 'https://stylebook-production-0f92.up.railway.app/api';
+console.log('>>> API_BASE_URL IS:', API_BASE_URL);
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+  headers: { 'Content-Type': 'application/json' },
 });
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
@@ -68,5 +68,12 @@ export const postsAPI = {
   addComment: (postId: string, data: any) => api.post(`/posts/${postId}/comments`, data),
   getComments: (postId: string) => api.get(`/posts/${postId}/comments`),
   delete: (postId: string) => api.delete(`/posts/${postId}`),
+};
+export const promosAPI = {
+  getAll: () => api.get('/promos'),
+  getMine: () => api.get('/promos/my'),
+  uploadImage: (formData: FormData) => api.post('/promos/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data: any) => api.post('/promos', data),
+  remove: (promoId: string) => api.delete(`/promos/${promoId}`),
 };
 export default api;

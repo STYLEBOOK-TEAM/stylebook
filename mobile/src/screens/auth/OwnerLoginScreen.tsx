@@ -166,6 +166,12 @@ export default function OwnerLoginScreen({ navigation }: any) {
       }
       await login(token, user);
     } catch (error: any) {
+      console.log('LOGIN ERROR:', JSON.stringify({
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data,
+      }, null, 2));
       if (error.response?.data?.error === 'EMAIL_NOT_VERIFIED') {
         navigation.navigate('VerifyEmail', { email: form.email.trim() });
         return;
