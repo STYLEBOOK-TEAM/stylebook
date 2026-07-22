@@ -1,20 +1,22 @@
 package com.stylebook.service;
 
 import com.stylebook.entity.User;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${stylebook.app.base-url}")
     private String baseUrl;
@@ -22,17 +24,34 @@ public class EmailService {
     @Value("${stylebook.app.name}")
     private String appName;
 
-    @Value("${spring.mail.username}")
+    @Value("${resend.api.key}")
+    private String resendApiKey;
+
+    @Value("${resend.from.address}")
     private String fromAddress;
 
-    @Async
-    public void sendOtpEmail(User user, String code) throws Exception {
-        MimeMessage mime = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mime, "utf-8");
-        helper.setFrom(fromAddress, appName);
-        helper.setTo(user.getEmail());
-        helper.setSubject("Welcome to " + appName + " — confirm your email");
-        helper.setText(
+    private static final String RESEND_API_URL = "https://api.resend.com/emails";
+
+    private void sendViaResend(String to, String subject, String textBody) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(resendApiKey);
+
+        Map<String, Object> payload = Map.of(
+            "from", appName + " <" + fromAddress + ">",
+            "to", List.of(to),
+            "subject", subject,
+            "text", textBody
+        );
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+        restTemplate.postForEntity(RESEND_API_URL, request, String.class);
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    public void sendOtpEmail(User user, String code) {
+        String subject = "Welcome to " + appName + " — confirm your email";
+        String body =
             "Hello " + user.getFullName() + ",\n\n" +
             "Thank you for joining " + appName + ", Ghana's booking platform for salons, " +
             "barbershops, spas and nail studios.\n\n" +
@@ -42,32 +61,29 @@ public class EmailService {
             " account, you can safely ignore this message and nothing will happen.\n\n" +
             "See you in the app,\n" +
             "The " + appName + " Team\n" +
-            appName + " — Book your next look in seconds", false);
-        mailSender.send(mime);
+            appName + " — Book your next look in seconds";
+
+        sendViaResend(user.getEmail(), subject, body);
     }
 
     public void sendVerificationEmail(User user) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setSubject(appName + " - Verify Your Email");
-        message.setText(
+        String subject = appName + " - Verify Your Email";
+        String body =
             "Hi " + user.getFullName() + ",\n\n" +
             "Welcome to StyleBook! Please verify your email address by clicking the link below:\n\n" +
             baseUrl + "/api/auth/verify-email?token=" + user.getEmailVerificationToken() + "\n\n" +
             "This link expires in 24 hours.\n\n" +
             "If you did not create an account, please ignore this email.\n\n" +
-            "The StyleBook Team"
-        );
-        mailSender.send(message);
+            "The StyleBook Team";
+
+        sendViaResend(user.getEmail(), subject, body);
     }
 
     public void sendBookingConfirmationEmail(String toEmail, String customerName,
                                               String shopName, String serviceName,
                                               String date, String time) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject(appName + " - Booking Confirmed!");
-        message.setText(
+        String subject = appName + " - Booking Confirmed!";
+        String body =
             "Hi " + customerName + ",\n\n" +
             "Your booking has been confirmed!\n\n" +
             "Shop: " + shopName + "\n" +
@@ -75,23 +91,21 @@ public class EmailService {
             "Date: " + date + "\n" +
             "Time: " + time + "\n\n" +
             "We look forward to seeing you!\n\n" +
-            "The StyleBook Team"
-        );
-        mailSender.send(message);
+            "The StyleBook Team";
+
+        sendViaResend(toEmail, subject, body);
     }
 
     public void sendBookingCancellationEmail(String toEmail, String customerName,
                                               String shopName, String date, String time) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject(appName + " - Booking Cancelled");
-        message.setText(
+        String subject = appName + " - Booking Cancelled";
+        String body =
             "Hi " + customerName + ",\n\n" +
             "Your booking at " + shopName + " on " + date + " at " + time +
             " has been cancelled.\n\n" +
             "You can rebook anytime through the StyleBook app.\n\n" +
-            "The StyleBook Team"
-        );
-        mailSender.send(message);
+            "The StyleBook Team";
+
+        sendViaResend(toEmail, subject, body);
     }
 }
