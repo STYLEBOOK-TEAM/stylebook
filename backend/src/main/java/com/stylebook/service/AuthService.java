@@ -28,17 +28,6 @@ public class AuthService {
     public AuthResponse registerCustomer(CustomerRegisterRequest request) {
         User existing = userRepository.findByEmail(request.getEmail()).orElse(null);
         if (existing != null) {
-            if (!existing.isEmailVerified() && existing.getRole() == User.UserRole.CUSTOMER) {
-                // Unverified account: let them re-register (update details, fresh code)
-                existing.setFullName(request.getFullName());
-                existing.setPhone(request.getPhone());
-                existing.setPassword(passwordEncoder.encode(request.getPassword()));
-                userRepository.save(existing);
-                issueOtp(existing);
-                String tk = jwtUtils.generateToken(existing.getId(), existing.getEmail(),
-                        existing.getRole().name());
-                return new AuthResponse(tk, existing, null);
-            }
             throw new RuntimeException("Email already in use");
         }
 
@@ -48,11 +37,10 @@ public class AuthService {
                 .phone(request.getPhone())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(User.UserRole.CUSTOMER)
-                .emailVerified(false)
+                .emailVerified(true)
                 .build();
 
         userRepository.save(user);
-        issueOtp(user);
 
         String token = jwtUtils.generateToken(user.getId(), user.getEmail(),
                 user.getRole().name());
@@ -63,19 +51,6 @@ public class AuthService {
     public AuthResponse registerOwner(OwnerRegisterRequest request) {
         User existingOwner = userRepository.findByEmail(request.getEmail()).orElse(null);
         if (existingOwner != null) {
-            if (!existingOwner.isEmailVerified() && existingOwner.getRole() == User.UserRole.OWNER) {
-                existingOwner.setFullName(request.getFullName());
-                existingOwner.setPhone(request.getPhone());
-                existingOwner.setPassword(passwordEncoder.encode(request.getPassword()));
-                userRepository.save(existingOwner);
-                issueOtp(existingOwner);
-                String tk = jwtUtils.generateToken(existingOwner.getId(), existingOwner.getEmail(),
-                        existingOwner.getRole().name());
-                String existingShopId = shopRepository.findByOwner(existingOwner)
-                        .stream().findFirst()
-                        .map(sh -> sh.getId().toString()).orElse(null);
-                return new AuthResponse(tk, existingOwner, existingShopId);
-            }
             throw new RuntimeException("Email already in use");
         }
 
@@ -85,7 +60,7 @@ public class AuthService {
                 .phone(request.getPhone())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(User.UserRole.OWNER)
-                .emailVerified(false)
+                .emailVerified(true)
                 .build();
 
         userRepository.save(user);
@@ -105,7 +80,6 @@ public class AuthService {
                 .build();
 
         shopRepository.save(shop);
-        issueOtp(user);
 
         String token = jwtUtils.generateToken(user.getId(), user.getEmail(),
                 user.getRole().name());
@@ -118,11 +92,6 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
-        }
-
-        if (!user.isEmailVerified()) {
-            issueOtp(user);
-            throw new RuntimeException("EMAIL_NOT_VERIFIED");
         }
 
         String shopId = null;
@@ -144,23 +113,6 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        if (user.isEmailVerified()) {
-            // already verified — just log them in
-        } else {
-            if (user.getEmailVerificationToken() == null ||
-                user.getEmailVerificationTokenExpiry() == null ||
-                user.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
-                throw new RuntimeException("Code has expired. Tap 'Resend code' to get a new one.");
-            }
-            if (!user.getEmailVerificationToken().equals(request.getCode().trim())) {
-                throw new RuntimeException("Wrong code. Check your email and try again.");
-            }
-            user.setEmailVerified(true);
-            user.setEmailVerificationToken(null);
-            user.setEmailVerificationTokenExpiry(null);
-            userRepository.save(user);
-        }
-
         String shopId = null;
         if (user.getRole() == User.UserRole.OWNER) {
             shopId = shopRepository.findByOwner(user)
@@ -180,30 +132,6 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        if (user.isEmailVerified()) {
-            throw new RuntimeException("This email is already verified. Just sign in.");
-        }
-
-        issueOtp(user);
-        return new MessageResponse("A new code has been sent to " + user.getEmail());
-    }
-
-    private void issueOtp(User user) {
-        String code = String.format("%06d", new SecureRandom().nextInt(1000000));
-        user.setEmailVerificationToken(code);
-        user.setEmailVerificationTokenExpiry(LocalDateTime.now().plusMinutes(10));
-        userRepository.save(user);
-
-        // Console fallback so a demo never gets stuck if email isn't configured
-        System.out.println("========================================");
-        System.out.println("[StyleBook OTP] " + user.getEmail() + " -> " + code);
-        System.out.println("========================================");
-
-        try {
-            emailService.sendOtpEmail(user, code);
-        } catch (Exception e) {
-            System.out.println("[StyleBook OTP] Email sending failed (" + e.getMessage()
-                    + ") — use the code printed above.");
-        }
+        return new MessageResponse("Your account is already verified.");
     }
 }
