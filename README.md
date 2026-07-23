@@ -102,4 +102,3 @@ Mobile Money payments (Paystack) · staff-level booking calendars · push notifi
 
 ---
 
-*Built by **Adesina Elijah** — 2nd year project, 2026.*
