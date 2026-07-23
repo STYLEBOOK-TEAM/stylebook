@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Alert, Switch,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ThemedScreen from '../../components/ThemedScreen';
@@ -40,7 +41,7 @@ export default function CustomerProfileScreen({ navigation }: any) {
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
             onPress={() => navigation.navigate('Bookings')}
           >
-            <Text style={styles.menuIcon}>📅</Text>
+            <Ionicons name="calendar-outline" size={20} color={theme.accent} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>My Bookings</Text>
             <Text style={[styles.menuArrow, { color: theme.textTertiary }]}>→</Text>
           </TouchableOpacity>
@@ -49,7 +50,7 @@ export default function CustomerProfileScreen({ navigation }: any) {
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
             onPress={() => navigation.navigate('SavedShops')}
           >
-            <Text style={styles.menuIcon}>❤️</Text>
+            <Ionicons name="heart-outline" size={20} color={theme.accent} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Saved Shops</Text>
             <Text style={[styles.menuArrow, { color: theme.textTertiary }]}>→</Text>
           </TouchableOpacity>
@@ -58,7 +59,7 @@ export default function CustomerProfileScreen({ navigation }: any) {
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
             onPress={() => navigation.navigate('MyReviews')}
           >
-            <Text style={styles.menuIcon}>⭐</Text>
+            <Ionicons name="star-outline" size={20} color={theme.accent} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>My Reviews</Text>
             <Text style={[styles.menuArrow, { color: theme.textTertiary }]}>→</Text>
           </TouchableOpacity>
@@ -67,7 +68,7 @@ export default function CustomerProfileScreen({ navigation }: any) {
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
             onPress={() => navigation.navigate('Settings')}
           >
-            <Text style={styles.menuIcon}>⚙️</Text>
+            <Ionicons name="settings-outline" size={20} color={theme.accent} style={styles.menuIcon} />
             <Text style={[styles.menuText, { color: theme.text }]}>Settings</Text>
             <Text style={[styles.menuArrow, { color: theme.textTertiary }]}>→</Text>
           </TouchableOpacity>
