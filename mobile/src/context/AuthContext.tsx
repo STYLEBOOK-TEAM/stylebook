@@ -8,6 +8,7 @@ interface User {
   role: 'CUSTOMER' | 'OWNER';
   shopId?: string;
   emailVerified: boolean;
+  phone?: string;
 }
 
 interface AuthContextType {
