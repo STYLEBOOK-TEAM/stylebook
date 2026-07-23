@@ -4,6 +4,7 @@ import {
   SafeAreaView, ActivityIndicator, RefreshControl,
   ScrollView, Modal, Image, Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { shopsAPI, promosAPI } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
@@ -150,7 +151,7 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={[styles.notificationBtn, { backgroundColor: theme.surfaceSecondary }]}>
-          <Text style={styles.notificationIcon}>🔔</Text>
+          <Ionicons name="notifications-outline" size={18} color={theme.text} />
         </TouchableOpacity>
       </View>
       <ScrollView
@@ -165,7 +166,7 @@ export default function HomeScreen({ navigation }: any) {
         {/* Search */}
         <View style={styles.searchRow}>
           <View style={[styles.searchContainer, { backgroundColor: theme.surfaceSecondary }]}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Ionicons name="search-outline" size={18} color={theme.textTertiary} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: theme.text }]}
               placeholder="Search salons, barbershops, spas..."
